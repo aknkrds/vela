@@ -3,6 +3,8 @@ import { Platform } from 'react-native';
 import * as Linking from 'expo-linking';
 import { storage } from '@/src/utils/storage';
 import axios from 'axios';
+import { configurePurchases } from '@/src/services/revenuecat';
+
 
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
@@ -55,6 +57,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     initializeAuth();
   }, []);
+
+  useEffect(() => {
+    if (user && user.user_id) {
+      configurePurchases(user.user_id);
+    }
+  }, [user]);
 
   const setAuthState = async (newToken: string, userData: User) => {
     await storage.secureSet('auth_token', newToken);

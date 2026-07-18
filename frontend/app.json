@@ -10,7 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.emergent.lastwords.jb5hlw"
+      "bundleIdentifier": "com.symi.vela"
     },
     "android": {
       "adaptiveIcon": {
@@ -18,7 +18,10 @@
         "backgroundColor": "#0a1628"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.emergent.lastwords.jb5hlw"
+      "package": "com.symi.vela",
+      "permissions": [
+        "com.android.vending.BILLING"
+      ]
     },
     "web": {
       "bundler": "metro",

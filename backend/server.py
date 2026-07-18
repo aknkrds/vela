@@ -1713,6 +1713,70 @@ async def get_admin_dashboard():
         html_content = f.read()
     return HTMLResponse(content=html_content)
 
+# RevenueCat Webhook Endpoint
+@api_router.post("/revenuecat/webhook")
+async def revenuecat_webhook(request: Request, authorization: Optional[str] = Header(None)):
+    webhook_secret = os.getenv("REVENUECAT_WEBHOOK_SECRET")
+    if webhook_secret and authorization != f"Bearer {webhook_secret}":
+        raise HTTPException(status_code=401, detail="Unauthorized webhook secret")
+        
+    try:
+        payload = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid JSON payload")
+        
+    logging.info(f"RevenueCat Webhook received: {payload}")
+    
+    event = payload.get("event")
+    if not event:
+        raise HTTPException(status_code=400, detail="Invalid payload: missing event details")
+        
+    event_type = event.get("type")
+    app_user_id = event.get("app_user_id")
+    
+    if not app_user_id:
+        return {"status": "ignored", "detail": "No app_user_id in event"}
+        
+    # Find user in MongoDB
+    user = await db.users.find_one({"user_id": app_user_id})
+    if not user:
+        logging.warning(f"RevenueCat webhook: user_id '{app_user_id}' not found in database")
+        return {"status": "ignored", "detail": f"User {app_user_id} not found in DB"}
+        
+    if event_type in ["INITIAL_PURCHASE", "RENEWAL", "NON_RENEWING_PURCHASE"]:
+        entitlement_ids = event.get("entitlement_ids", [])
+        subscription_tier = "premium" if entitlement_ids else "free"
+        
+        expiration_ms = event.get("expiration_at_ms")
+        expiry_date = None
+        if expiration_ms:
+            expiry_date = datetime.fromtimestamp(expiration_ms / 1000.0, tz=timezone.utc).replace(tzinfo=None)
+            
+        await db.users.update_one(
+            {"user_id": app_user_id},
+            {"$set": {
+                "subscription_tier": subscription_tier,
+                "subscription_status": "active",
+                "subscription_expiry": expiry_date,
+                "updated_at": datetime.utcnow()
+            }}
+        )
+        logging.info(f"User {app_user_id} upgraded/renewed to {subscription_tier} via RevenueCat")
+        
+    elif event_type in ["CANCELLATION", "EXPIRATION"]:
+        await db.users.update_one(
+            {"user_id": app_user_id},
+            {"$set": {
+                "subscription_tier": "free",
+                "subscription_status": "inactive",
+                "subscription_expiry": None,
+                "updated_at": datetime.utcnow()
+            }}
+        )
+        logging.info(f"User {app_user_id} subscription expired or cancelled")
+        
+    return {"status": "success", "detail": "Webhook event processed"}
+
 # Include router
 app.include_router(api_router)
 
