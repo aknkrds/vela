@@ -287,16 +287,15 @@ export default function Login() {
             </TouchableOpacity>
 
             {/* Create Account Button - Filled style like Sign In */}
-            <Link href="/(auth)/register" asChild>
-              <TouchableOpacity
-                testID="go-to-register-button"
-                style={[styles.createAccountButton, { backgroundColor: '#10b981', height: btnHeight }]}
-              >
-                <Text style={[styles.createAccountButtonText, { fontSize: 18 * fontSizeScale }]}>
-                  {t('createAccount')}
-                </Text>
-              </TouchableOpacity>
-            </Link>
+            <TouchableOpacity
+              testID="go-to-register-button"
+              style={[styles.createAccountButton, { backgroundColor: '#10b981', height: btnHeight }]}
+              onPress={() => router.push('/(auth)/register')}
+            >
+              <Text style={[styles.createAccountButtonText, { fontSize: 18 * fontSizeScale }]}>
+                {t('createAccount')}
+              </Text>
+            </TouchableOpacity>
 
             <Text style={[styles.versionText, { fontSize: 12 * fontSizeScale, color: colors.textMuted }]}>
               {APP_VERSION}

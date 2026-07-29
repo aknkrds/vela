@@ -10,22 +10,26 @@ const APPLE_API_KEY = process.env.EXPO_PUBLIC_REVENUECAT_APPLE_API_KEY || '';
  */
 export const configurePurchases = async (userId: string) => {
   try {
-    Purchases.setLogLevel(LOG_LEVEL.DEBUG);
-    
     if (Platform.OS === 'android') {
-      if (!GOOGLE_API_KEY || GOOGLE_API_KEY === 'goog_placeholder_api_key') {
-        console.warn('RevenueCat Google API key is a placeholder or not set.');
+      if (!GOOGLE_API_KEY || GOOGLE_API_KEY.includes('placeholder')) {
+        console.log('[RevenueCat] Google API key is placeholder. Skipping native initialization in dev mode.');
+        return;
       }
+      Purchases.setLogLevel(LOG_LEVEL.DEBUG);
       Purchases.configure({ apiKey: GOOGLE_API_KEY, appUserID: userId });
     } else if (Platform.OS === 'ios') {
-      if (!APPLE_API_KEY || APPLE_API_KEY === 'appl_placeholder_api_key') {
-        console.warn('RevenueCat Apple API key is a placeholder or not set.');
+      if (!APPLE_API_KEY || APPLE_API_KEY.includes('placeholder')) {
+        console.log('[RevenueCat] Apple API key is placeholder. Skipping native initialization in dev mode.');
+        return;
       }
+      Purchases.setLogLevel(LOG_LEVEL.DEBUG);
       Purchases.configure({ apiKey: APPLE_API_KEY, appUserID: userId });
+    } else {
+      return;
     }
     console.log(`RevenueCat initialized successfully for user: ${userId}`);
   } catch (error) {
-    console.error('Error configuring RevenueCat:', error);
+    console.warn('[RevenueCat] Could not initialize (expected in Expo Go without native build):', error);
   }
 };
 
