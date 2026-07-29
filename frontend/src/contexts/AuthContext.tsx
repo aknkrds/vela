@@ -41,6 +41,7 @@ interface AuthContextType {
   token: string | null;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, full_name: string, phone: string, referralCode?: string) => Promise<void>;
+  registerWithGoogle: (sessionId: string, phone: string, password: string, referralCode?: string) => Promise<void>;
   loginWithGoogleSession: (sessionId: string) => Promise<{ is_new_user?: boolean } | null>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
@@ -179,6 +180,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw new Error(error.response?.data?.detail || 'Registration failed');
     }
   };
+
+  const registerWithGoogle = async (sessionId: string, phone: string, password: string, referralCode?: string) => {
+    try {
+      const response = await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/auth/google/register`, {
+        session_id: sessionId,
+        phone,
+        password,
+        referral_code: referralCode,
+      });
+
+      const { access_token, user: userData } = response.data;
+      await setAuthState(access_token, userData);
+    } catch (error: any) {
+      throw new Error(error.response?.data?.detail || 'Google registration failed');
+    }
+  };
  
   const loginWithGoogleSession = async (sessionId: string): Promise<{ is_new_user?: boolean } | null> => {
     try {
@@ -229,7 +246,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, register, loginWithGoogleSession, logout, refreshUser, isLoading }}>
+    <AuthContext.Provider value={{ user, token, login, register, registerWithGoogle, loginWithGoogleSession, logout, refreshUser, isLoading }}>
       {children}
     </AuthContext.Provider>
   );

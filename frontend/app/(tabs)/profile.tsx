@@ -17,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import api from '@/src/api/client';
 import * as Clipboard from 'expo-clipboard';
+import * as Linking from 'expo-linking';
 import { Switch } from 'react-native';
 import { COMFORT_BUTTON_HEIGHT, COMFORT_ICON_SIZE } from '@/src/utils/theme';
 import { isRunningInExpoGo } from 'expo';
@@ -729,6 +730,18 @@ export default function Profile() {
                 </Text>
               </TouchableOpacity>
             )}
+
+            {/* Visit Website Button */}
+            <TouchableOpacity
+              style={[styles.settingsRow, { borderBottomWidth: 0, paddingBottom: 0, marginTop: 8 }]}
+              onPress={() => Linking.openURL('https://velalife.tr')}
+            >
+              <View style={styles.infoLabel}>
+                <Ionicons name="globe-outline" size={iconSize} color={colors.accent} />
+                <Text style={[styles.infoLabelText, { fontSize: 14 * fontSizeScale, color: colors.accent }]}>{t('visitWebsite')}</Text>
+              </View>
+              <Ionicons name="open-outline" size={18} color={colors.accent} />
+            </TouchableOpacity>
           </View>
         </View>
 

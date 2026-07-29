@@ -321,6 +321,16 @@ async def process_referral(new_user_id: str, referral_code_str: str):
     )
     return True
 
+# Health Check
+@api_router.get("/health")
+async def health_check():
+    """Health check endpoint to verify server is running and MongoDB is accessible."""
+    try:
+        await db.command("ping")
+        return {"status": "healthy", "database": "connected", "version": "1.0.2"}
+    except Exception as e:
+        return {"status": "unhealthy", "database": "disconnected", "error": str(e)}
+
 # Auth Routes
 @api_router.post("/auth/register", response_model=TokenResponse)
 async def register(user_data: UserRegister):
@@ -514,6 +524,104 @@ async def google_session(request: Request):
         "session_token": session_token,
         "user": user_response,
         "is_new_user": not existing_user
+    }
+
+class GoogleRegisterRequest(BaseModel):
+    session_id: str
+    phone: str
+    password: str
+    referral_code: Optional[str] = None
+
+@api_router.post("/auth/google/register", response_model=TokenResponse)
+async def google_register(data: GoogleRegisterRequest):
+    """Register a new user using Google session + phone + password."""
+    # Verify session with Emergent auth service
+    async with httpx.AsyncClient(timeout=10.0) as http_client:
+        try:
+            resp = await http_client.get(
+                EMERGENT_AUTH_URL,
+                headers={"X-Session-ID": data.session_id}
+            )
+            resp.raise_for_status()
+            google_data = resp.json()
+        except httpx.HTTPStatusError as e:
+            raise HTTPException(status_code=401, detail=f"Invalid session: {e.response.text}")
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Auth verification failed: {str(e)}")
+    
+    email = google_data.get("email")
+    name = google_data.get("name", "")
+    picture = google_data.get("picture", "")
+    
+    if not email:
+        raise HTTPException(status_code=500, detail="Could not retrieve email from Google")
+    
+    # Check if user already exists
+    existing_email = await db.users.find_one({"email": email})
+    if existing_email:
+        raise HTTPException(status_code=400, detail="Bu e-posta adresi ile kayıtlı bir kullanıcı zaten var.")
+    
+    existing_phone = await db.users.find_one({"phone": data.phone})
+    if existing_phone:
+        raise HTTPException(status_code=400, detail="Bu telefon numarası ile kayıtlı bir kullanıcı zaten var.")
+    
+    # Generate unique referral code
+    while True:
+        ref_code = generate_referral_code()
+        dup = await db.users.find_one({"referral_code": ref_code})
+        if not dup:
+            break
+    
+    # Create user with Google info + phone + password
+    hashed_password = get_password_hash(data.password)
+    user_dict = {
+        "user_id": f"user_{uuid.uuid4().hex[:12]}",
+        "email": email,
+        "password_hash": hashed_password,
+        "full_name": name,
+        "phone": data.phone,
+        "picture": picture,
+        "role": "user",
+        "auth_provider": "google",
+        "subscription_tier": "free",
+        "subscription_status": "active",
+        "subscription_expiry": None,
+        "last_checkin": datetime.utcnow(),
+        "consecutive_missed_days": 0,
+        "status": "active",
+        "created_at": datetime.utcnow(),
+        "updated_at": datetime.utcnow(),
+        "symi_points": 0,
+        "referral_code": ref_code,
+        "referrals": [],
+        "referred_by": None,
+        "referral_eligible": False,
+        "extra_recipients": 0,
+        "last_password_change": datetime.utcnow()
+    }
+    
+    result = await db.users.insert_one(user_dict)
+    user_dict["_id"] = str(result.inserted_id)
+    
+    # Process referral if provided
+    if data.referral_code:
+        await process_referral(user_dict["user_id"], data.referral_code)
+        updated_user = await db.users.find_one({"user_id": user_dict["user_id"]})
+        if updated_user:
+            user_dict = updated_user
+            user_dict["_id"] = str(user_dict["_id"])
+    
+    # Create JWT token
+    access_token = create_access_token(data={"sub": email})
+    
+    # Remove sensitive data from response
+    if "password_hash" in user_dict:
+        del user_dict["password_hash"]
+    
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": user_dict
     }
 
 @api_router.get("/auth/me")

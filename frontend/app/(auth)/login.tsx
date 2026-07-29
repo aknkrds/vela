@@ -206,37 +206,7 @@ export default function Login() {
           </View>
 
           <View style={styles.form}>
-            {/* Google Sign In Button */}
-            <TouchableOpacity
-              testID="google-signin-button"
-              style={[
-                styles.googleButton, 
-                { backgroundColor: colors.googleBtnBg, height: btnHeight },
-                googleLoading && styles.buttonDisabled,
-              ]}
-              onPress={handleGoogleLogin}
-              disabled={googleLoading || loading}
-            >
-              {googleLoading ? (
-                <ActivityIndicator color={colors.googleBtnText} />
-              ) : (
-                <>
-                  <Ionicons name="logo-google" size={comfortMode ? 26 : 22} color={colors.googleBtnText} />
-                  <Text style={[styles.googleButtonText, { fontSize: 16 * fontSizeScale, color: colors.googleBtnText }]}>
-                    {t('googleSignIn')}
-                  </Text>
-                </>
-              )}
-            </TouchableOpacity>
-
-            <View style={styles.divider}>
-              <View style={[styles.dividerLine, { backgroundColor: colors.dividerLine }]} />
-              <Text style={[styles.dividerText, { fontSize: 12 * fontSizeScale, color: colors.textMuted }]}>
-                {t('orSignInEmail')}
-              </Text>
-              <View style={[styles.dividerLine, { backgroundColor: colors.dividerLine }]} />
-            </View>
-
+            {/* Email Input */}
             <View style={[styles.inputContainer, { backgroundColor: colors.inputBg, borderColor: colors.inputBorder, height: btnHeight }]}>
               <Ionicons name="mail-outline" size={iconSize} color={colors.iconColor} style={styles.inputIcon} />
               <TextInput
@@ -252,6 +222,26 @@ export default function Login() {
               />
             </View>
 
+            {/* Google Sign In - Text Link below email */}
+            <TouchableOpacity
+              testID="google-signin-link"
+              onPress={handleGoogleLogin}
+              disabled={googleLoading || loading}
+              style={styles.googleTextLink}
+            >
+              {googleLoading ? (
+                <ActivityIndicator size="small" color={colors.accent} />
+              ) : (
+                <View style={styles.googleTextContainer}>
+                  <Ionicons name="logo-google" size={16} color={colors.accent} />
+                  <Text style={[styles.googleText, { fontSize: 14 * fontSizeScale, color: colors.accent }]}>
+                    {t('continueWithGoogle')}
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
+
+            {/* Password Input */}
             <View style={[styles.inputContainer, { backgroundColor: colors.inputBg, borderColor: colors.inputBorder, height: btnHeight }]}>
               <Ionicons name="lock-closed-outline" size={iconSize} color={colors.iconColor} style={styles.inputIcon} />
               <TextInput
@@ -276,6 +266,7 @@ export default function Login() {
               </TouchableOpacity>
             </View>
 
+            {/* Sign In Button */}
             <TouchableOpacity
               testID="login-submit-button"
               style={[
@@ -295,9 +286,13 @@ export default function Login() {
               )}
             </TouchableOpacity>
 
+            {/* Create Account Button - Filled style like Sign In */}
             <Link href="/(auth)/register" asChild>
-              <TouchableOpacity testID="go-to-register-button" style={[styles.registerButton, { borderColor: colors.accent, height: btnHeight }]}>
-                <Text style={[styles.registerButtonText, { fontSize: 18 * fontSizeScale, color: colors.accent }]}>
+              <TouchableOpacity
+                testID="go-to-register-button"
+                style={[styles.createAccountButton, { backgroundColor: '#10b981', height: btnHeight }]}
+              >
+                <Text style={[styles.createAccountButtonText, { fontSize: 18 * fontSizeScale }]}>
                   {t('createAccount')}
                 </Text>
               </TouchableOpacity>
@@ -409,28 +404,19 @@ const styles = StyleSheet.create({
   form: {
     width: '100%',
   },
-  googleButton: {
-    flexDirection: 'row',
+  googleTextLink: {
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 12,
-    gap: 12,
-    marginBottom: 8,
+    paddingVertical: 8,
+    marginBottom: 12,
   },
-  googleButtonText: {
-    fontWeight: '600',
-  },
-  divider: {
+  googleTextContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 20,
+    gap: 6,
   },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-  },
-  dividerText: {
-    paddingHorizontal: 12,
+  googleText: {
+    fontWeight: '500',
   },
   inputContainer: {
     flexDirection: 'row',
@@ -463,15 +449,14 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '600',
   },
-  registerButton: {
-    backgroundColor: 'transparent',
+  createAccountButton: {
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
     marginTop: 16,
   },
-  registerButtonText: {
+  createAccountButtonText: {
+    color: '#fff',
     fontWeight: '600',
   },
   versionText: {

@@ -157,5 +157,5 @@ export const COMFORT_ICON_SIZE = 28;     // normal: 20-24
 export const COMFORT_BORDER_RADIUS = 16; // normal: 12
 
 // App Version
-export const APP_VERSION = 'v.0.9';
+export const APP_VERSION = 'v.1.0.2';
 
