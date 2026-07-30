@@ -156,6 +156,8 @@ export const COMFORT_PADDING = 20;       // normal: 16
 export const COMFORT_ICON_SIZE = 28;     // normal: 20-24
 export const COMFORT_BORDER_RADIUS = 16; // normal: 12
 
+import Constants from 'expo-constants';
+
 // App Version
-export const APP_VERSION = 'v.1.0.2';
+export const APP_VERSION = `v.${Constants.expoConfig?.version || '1.1.0'}`;
 
