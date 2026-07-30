@@ -68,3 +68,5 @@ venv/
 # Other temp files
 memory/test_credentials.md
 android-sdk/
+backend/logs/
+*.log

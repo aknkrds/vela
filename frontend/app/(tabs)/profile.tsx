@@ -9,13 +9,16 @@ import {
   ActivityIndicator,
   Modal,
   TextInput,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/src/contexts/AuthContext';
 import { useSettings } from '@/src/contexts/SettingsContext';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import api from '@/src/api/client';
+import { storage } from '@/src/utils/storage';
 import * as Clipboard from 'expo-clipboard';
 import * as Linking from 'expo-linking';
 import { Switch } from 'react-native';
@@ -73,6 +76,145 @@ export default function Profile() {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [submittingPassword, setSubmittingPassword] = useState(false);
+
+  // Avatar & PIN states
+  const { hasPin, setupPin, removePin, resetPinWithPassword } = useAuth();
+  const [avatarLoading, setAvatarLoading] = useState(false);
+  const [localAvatarUri, setLocalAvatarUri] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadLocalAvatar();
+  }, [user?.email]);
+
+  const loadLocalAvatar = async () => {
+    if (user?.email) {
+      const stored = await storage.getItem(`user_avatar_${user.email}`);
+      if (stored) {
+        setLocalAvatarUri(stored);
+      }
+    }
+  };
+
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [pinCode, setPinCode] = useState('');
+  const [confirmPinCode, setConfirmPinCode] = useState('');
+  const [showPinResetModal, setShowPinResetModal] = useState(false);
+  const [pinPasswordInput, setPinPasswordInput] = useState('');
+  const [pinSubmitting, setPinSubmitting] = useState(false);
+
+  const handlePickAvatar = async () => {
+    try {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        Alert.alert(t('error'), t('permissionDeniedPhoto'));
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.5,
+        base64: true,
+      });
+
+      if (!result.canceled && result.assets && result.assets[0] && result.assets[0].base64) {
+        setAvatarLoading(true);
+        const base64Uri = `data:image/jpeg;base64,${result.assets[0].base64}`;
+        setLocalAvatarUri(base64Uri);
+        if (user?.email) {
+          await storage.setItem(`user_avatar_${user.email}`, base64Uri);
+        }
+
+        try {
+          await api.post('/users/avatar', { picture: base64Uri });
+        } catch (apiErr: any) {
+          try {
+            await api.put('/users/me', { picture: base64Uri });
+          } catch (e2) {}
+        }
+
+        if (user) {
+          user.picture = base64Uri;
+        }
+        await refreshUser();
+        Alert.alert(t('success'), t('allSet'));
+      }
+    } catch (e: any) {
+      console.error('Avatar pick error:', e);
+      Alert.alert(t('error'), e.response?.data?.detail || e.message || t('error'));
+    } finally {
+      setAvatarLoading(false);
+    }
+  };
+
+  const handleDeleteAvatar = async () => {
+    Alert.alert(
+      t('deleteAvatar'),
+      t('deleteAvatarConfirm'),
+      [
+        { text: t('cancel'), style: 'cancel' },
+        {
+          text: t('delete'),
+          style: 'destructive',
+          onPress: async () => {
+            setAvatarLoading(true);
+            setLocalAvatarUri(null);
+            if (user?.email) {
+              await storage.removeItem(`user_avatar_${user.email}`);
+            }
+            try {
+              await api.delete('/users/avatar');
+            } catch (e: any) {}
+            if (user) {
+              delete user.picture;
+            }
+            await refreshUser();
+            Alert.alert(t('success'), t('allSet'));
+            setAvatarLoading(false);
+          },
+        },
+      ]
+    );
+  };
+
+  const handleSavePin = async () => {
+    if (pinCode.length < 4 || pinCode.length > 8) {
+      Alert.alert(t('error'), t('pinLengthError'));
+      return;
+    }
+    if (pinCode !== confirmPinCode) {
+      Alert.alert(t('error'), t('pinMismatchError'));
+      return;
+    }
+    await setupPin(pinCode);
+    Alert.alert(t('success'), t('pinSetSuccess'));
+    setShowPinModal(false);
+    setPinCode('');
+    setConfirmPinCode('');
+  };
+
+  const handleResetPinSubmitFromSettings = async () => {
+    if (!pinPasswordInput.trim()) {
+      Alert.alert(t('error'), t('fieldsRequired'));
+      return;
+    }
+    setPinSubmitting(true);
+    try {
+      const ok = await resetPinWithPassword(pinPasswordInput);
+      if (ok) {
+        setShowPinResetModal(false);
+        setPinPasswordInput('');
+        Alert.alert(t('success'), t('pinResetSuccessAlert'));
+      } else {
+        Alert.alert(t('error'), t('invalidPasswordError'));
+      }
+    } catch (e) {
+      Alert.alert(t('error'), t('invalidPasswordError'));
+    } finally {
+      setPinSubmitting(false);
+    }
+  };
 
   useEffect(() => {
     loadPlans();
@@ -349,9 +491,45 @@ export default function Profile() {
       <ScrollView>
         {/* Header */}
         <View style={[styles.header, { backgroundColor: colors.surface }]}>
-          <View style={[styles.profileIcon, { backgroundColor: colors.accentDark }]}>
-            <Ionicons name="person" size={comfortMode ? 56 : 48} color={colors.accent} />
+          <View style={styles.avatarWrapper}>
+            {(localAvatarUri || user?.picture) ? (
+              <Image source={{ uri: (localAvatarUri || user?.picture)! }} style={styles.profileAvatarImage} />
+            ) : (
+              <View style={[styles.profileIcon, { backgroundColor: colors.accentDark }]}>
+                <Ionicons name="person" size={comfortMode ? 56 : 48} color={colors.accent} />
+              </View>
+            )}
+
+            {avatarLoading ? (
+              <ActivityIndicator size="small" color={colors.accent} style={{ marginTop: 8 }} />
+            ) : !(localAvatarUri || user?.picture) ? (
+              <TouchableOpacity
+                style={[styles.avatarBtn, { backgroundColor: colors.accent }]}
+                onPress={handlePickAvatar}
+              >
+                <Ionicons name="add" size={14} color="#fff" />
+                <Text style={styles.avatarBtnText}>{t('addAvatar')}</Text>
+              </TouchableOpacity>
+            ) : (
+              <View style={styles.avatarBtnRow}>
+                <TouchableOpacity
+                  style={[styles.avatarBtnSmall, { backgroundColor: colors.accent }]}
+                  onPress={handlePickAvatar}
+                >
+                  <Ionicons name="pencil" size={12} color="#fff" />
+                  <Text style={styles.avatarBtnTextSmall}>{t('changeAvatar')}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.avatarBtnSmall, { backgroundColor: colors.danger }]}
+                  onPress={handleDeleteAvatar}
+                >
+                  <Ionicons name="trash" size={12} color="#fff" />
+                  <Text style={styles.avatarBtnTextSmall}>{t('deleteAvatar')}</Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
+
           <Text style={[styles.userName, { fontSize: 24 * fontSizeScale, color: colors.textPrimary }]}>{user?.full_name}</Text>
           <Text style={[styles.userEmail, { fontSize: 16 * fontSizeScale, color: colors.textSecondary }]}>{user?.email}</Text>
           <View style={[styles.tierBadge, { backgroundColor: getTierColor(user?.subscription_tier || 'free') }]}>
@@ -433,6 +611,50 @@ export default function Profile() {
               >
                 <Text style={[styles.changePasswordBtnText, { color: colors.accent }]}>{t('changePasswordTitle')}</Text>
               </TouchableOpacity>
+            </View>
+
+            {/* App PIN Lock Row */}
+            <View style={[styles.infoRow, { borderBottomColor: colors.border }]}>
+              <View style={styles.infoLabel}>
+                <Ionicons name="keypad" size={iconSize} color={colors.accent} />
+                <Text style={[styles.infoLabelText, { fontSize: 14 * fontSizeScale, color: colors.textSecondary }]}>
+                  {t('appPinSection')}
+                </Text>
+              </View>
+              <View style={{ flexDirection: 'row', gap: 6 }}>
+                {!hasPin ? (
+                  <TouchableOpacity
+                    style={[styles.changePasswordBtn, { backgroundColor: colors.accent }]}
+                    onPress={() => setShowPinModal(true)}
+                  >
+                    <Text style={{ color: '#fff', fontWeight: '600', fontSize: 13 * fontSizeScale }}>
+                      {t('setupPin')}
+                    </Text>
+                  </TouchableOpacity>
+                ) : (
+                  <>
+                    <TouchableOpacity
+                      style={[styles.changePasswordBtn, { backgroundColor: colors.accentDark }]}
+                      onPress={() => setShowPinResetModal(true)}
+                    >
+                      <Text style={{ color: colors.accent, fontWeight: '600', fontSize: 12 * fontSizeScale }}>
+                        {t('resetPin')}
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.changePasswordBtn, { backgroundColor: colors.badgeBg }]}
+                      onPress={async () => {
+                        await removePin();
+                        Alert.alert(t('success'), t('allSet'));
+                      }}
+                    >
+                      <Text style={{ color: colors.danger, fontWeight: '600', fontSize: 12 * fontSizeScale }}>
+                        {t('removePin')}
+                      </Text>
+                    </TouchableOpacity>
+                  </>
+                )}
+              </View>
             </View>
             
             <View style={[styles.infoRow, { borderBottomColor: colors.border }]}>
@@ -949,6 +1171,88 @@ export default function Profile() {
                 </View>
               ))}
             </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* PIN Creation Modal */}
+      <Modal visible={showPinModal} animationType="slide" transparent={true} onRequestClose={() => setShowPinModal(false)}>
+        <View style={styles.profileModalOverlay}>
+          <View style={[styles.profileModalContent, { backgroundColor: colors.background }]}>
+            <Text style={[styles.profileModalTitle, { fontSize: 20 * fontSizeScale, color: colors.textPrimary }]}>
+              {t('setupPin')}
+            </Text>
+            <Text style={[styles.profileModalSub, { color: colors.textSecondary }]}>{t('enterPin')}</Text>
+            <TextInput
+              style={[styles.profileModalInput, { backgroundColor: colors.inputBg, borderColor: colors.inputBorder, color: colors.inputText }]}
+              placeholder="4-8 Haneli PIN"
+              placeholderTextColor={colors.inputPlaceholder}
+              keyboardType="numeric"
+              maxLength={8}
+              secureTextEntry
+              value={pinCode}
+              onChangeText={setPinCode}
+            />
+            <Text style={[styles.profileModalSub, { color: colors.textSecondary }]}>{t('confirmPin')}</Text>
+            <TextInput
+              style={[styles.profileModalInput, { backgroundColor: colors.inputBg, borderColor: colors.inputBorder, color: colors.inputText }]}
+              placeholder="PIN Kodu Tekrar"
+              placeholderTextColor={colors.inputPlaceholder}
+              keyboardType="numeric"
+              maxLength={8}
+              secureTextEntry
+              value={confirmPinCode}
+              onChangeText={setConfirmPinCode}
+            />
+            <View style={styles.profileModalButtons}>
+              <TouchableOpacity
+                style={[styles.profileModalButton, styles.profileModalCancelButton]}
+                onPress={() => setShowPinModal(false)}
+              >
+                <Text style={styles.profileModalCancelButtonText}>{t('cancel')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.profileModalButton, { backgroundColor: colors.accent }]}
+                onPress={handleSavePin}
+              >
+                <Text style={{ color: '#fff', fontWeight: '600' }}>{t('setupPin')}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* PIN Reset Modal */}
+      <Modal visible={showPinResetModal} animationType="slide" transparent={true} onRequestClose={() => setShowPinResetModal(false)}>
+        <View style={styles.profileModalOverlay}>
+          <View style={[styles.profileModalContent, { backgroundColor: colors.background }]}>
+            <Text style={[styles.profileModalTitle, { fontSize: 20 * fontSizeScale, color: colors.textPrimary }]}>
+              {t('resetPin')}
+            </Text>
+            <Text style={[styles.profileModalSub, { color: colors.textSecondary }]}>{t('enterPasswordToResetPin')}</Text>
+            <TextInput
+              style={[styles.profileModalInput, { backgroundColor: colors.inputBg, borderColor: colors.inputBorder, color: colors.inputText }]}
+              placeholder={t('passwordPlaceholder')}
+              placeholderTextColor={colors.inputPlaceholder}
+              secureTextEntry
+              value={pinPasswordInput}
+              onChangeText={setPinPasswordInput}
+            />
+            <View style={styles.profileModalButtons}>
+              <TouchableOpacity
+                style={[styles.profileModalButton, styles.profileModalCancelButton]}
+                onPress={() => setShowPinResetModal(false)}
+              >
+                <Text style={styles.profileModalCancelButtonText}>{t('cancel')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.profileModalButton, { backgroundColor: colors.danger }]}
+                onPress={handleResetPinSubmitFromSettings}
+                disabled={pinSubmitting}
+              >
+                <Text style={{ color: '#fff', fontWeight: '600' }}>{t('resetPin')}</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
@@ -1556,5 +1860,48 @@ const styles = StyleSheet.create({
   unsupportedText: {
     color: '#f59e0b',
     flex: 1,
+  },
+  avatarWrapper: {
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  profileAvatarImage: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    borderWidth: 2,
+    borderColor: '#6366f1',
+  },
+  avatarBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    marginTop: 8,
+    gap: 4,
+  },
+  avatarBtnText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  avatarBtnRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 8,
+  },
+  avatarBtnSmall: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 4,
+  },
+  avatarBtnTextSmall: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: 'bold',
   },
 });

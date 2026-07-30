@@ -3,8 +3,8 @@ import { AuthProvider } from '@/src/contexts/AuthContext';
 import { useEffect } from 'react';
 import * as SplashScreen from 'expo-splash-screen';
 import { Asset } from 'expo-asset';
-
 import { SettingsProvider } from '@/src/contexts/SettingsContext';
+import { PinLockOverlay } from '@/src/components/PinLockOverlay';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -34,6 +34,7 @@ export default function RootLayout() {
           <Stack.Screen name="(auth)/register" />
           <Stack.Screen name="(tabs)" />
         </Stack>
+        <PinLockOverlay />
       </AuthProvider>
     </SettingsProvider>
   );

@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vela - Geleceğe Güvenli Bir Mesaj Bırakın</title>
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Vela, günlük check-in'lerinizle güvende olduğunuzu takip eden, aksilik durumunda şifreli kapsüllerinizi sevdiklerinize ileten yeni nesil acil durum ve miras uygulamasıdır.">
+    <meta name="keywords" content="Vela, Symi, dijital miras, acil durum mesajı, şifreli mesaj, checkin, güvenlik uygulaması, legacy message, velalife">
+    <meta name="author" content="Symi">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://velalife.tr/">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://velalife.tr/">
+    <meta property="og:title" content="Vela - Dijital Acil Durum ve Miras Uygulaması">
+    <meta property="og:description" content="Kapsüllerinizi oluşturun, alıcılarınızı belirleyin, günlük check-in yapın. Güvende olduğunuzdan emin olalım, aksi takdirde mesajlarınızı iletelim.">
+    <meta property="og:image" content="https://velalife.tr/assets/images/vela-preview.png">
+    <meta property="og:site_name" content="Vela">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://velalife.tr/">
+    <meta name="twitter:title" content="Vela - Dijital Acil Durum ve Miras Uygulaması">
+    <meta name="twitter:description" content="Kapsüllerinizi oluşturun, alıcılarınızı belirleyin, günlük check-in yapın. Güvende olduğunuzdan emin olalım, aksi takdirde mesajlarınızı iletelim.">
+    <meta name="twitter:image" content="https://velalife.tr/assets/images/vela-preview.png">
+
+    <!-- CSS Links -->
+    <link rel="stylesheet" href="styles.css">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%230a1628%22/><circle cx=%2250%22 cy=%2250%22 r=%2225%22 fill=%22none%22 stroke=%22%2300f2fe%22 stroke-width=%228%22 stroke-dasharray=%22120 40%22/></svg>">
+</head>
+<body>
+
+    <!-- Header Navbar -->
+    <header class="navbar">
+        <div class="container nav-container">
+            <a href="#" class="logo">
+                <div class="logo-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                    </svg>
+                </div>
+                <span>VELA</span>
+            </a>
+            
+            <button class="menu-toggle" aria-label="Menüyü Aç" aria-expanded="false">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+
+            <ul class="nav-links">
+                <li><a href="#how-it-works" data-i18n="nav_how_it_works">Nasıl Çalışır?</a></li>
+                <li><a href="#features" data-i18n="nav_features">Özellikler</a></li>
+                <li><a href="#pricing" data-i18n="nav_pricing">Fiyatlandırma</a></li>
+                <li><a href="#faq" data-i18n="nav_faq">Sıkça Sorulan Sorular</a></li>
+                <li><a href="#support" data-i18n="nav_support">İletişim & Destek</a></li>
+                
+                <!-- Language Selector Dropdown inside Navbar -->
+                <li class="lang-selector-wrapper">
+                    <div class="lang-dropdown">
+                        <button class="lang-dropdown-btn" id="lang-dropdown-btn" aria-label="Dil Seçimi">
+                            <span class="active-flag">🇹🇷</span> <span class="active-lang-name">Türkçe</span> <span class="arrow">▼</span>
+                        </button>
+                        <div class="lang-dropdown-content" id="lang-dropdown-content">
+                            <a href="javascript:void(0)" data-lang="tr"><span>🇹🇷</span> Türkçe</a>
+                            <a href="javascript:void(0)" data-lang="en"><span>🇺🇸</span> English</a>
+                            <a href="javascript:void(0)" data-lang="de"><span>🇩🇪</span> Deutsch</a>
+                            <a href="javascript:void(0)" data-lang="it"><span>🇮🇹</span> Italiano</a>
+                            <a href="javascript:void(0)" data-lang="fr"><span>🇫🇷</span> Français</a>
+                            <a href="javascript:void(0)" data-lang="es"><span>🇪🇸</span> Español</a>
+                            <a href="javascript:void(0)" data-lang="ar"><span>🇸🇦</span> العربية</a>
+                            <a href="javascript:void(0)" data-lang="hi"><span>🇮🇳</span> हिन्दी</a>
+                            <a href="javascript:void(0)" data-lang="ko"><span>🇰🇷</span> 한국어</a>
+                            <a href="javascript:void(0)" data-lang="ja"><span>🇯🇵</span> 日本語</a>
+                            <a href="javascript:void(0)" data-lang="zh"><span>🇨🇳</span> 中文</a>
+                            <a href="javascript:void(0)" data-lang="ru"><span>🇷🇺</span> Русский</a>
+                        </div>
+                    </div>
+                </li>
+                
+                <li><button class="nav-btn" data-i18n="nav_download" onclick="document.getElementById('download-section').scrollIntoView({behavior: 'smooth'})">Hemen İndir</button></li>
+            </ul>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero" id="home">
+        <div class="container hero-grid">
+            <div class="hero-content">
+                <div class="badge" data-i18n="hero_badge">Symi Güvencesiyle</div>
+                <h1 data-i18n="hero_title">Geleceğe Bırakılan En Güvenli Emanetiniz.</h1>
+                <p data-i18n="hero_desc">Vela, her gün güvende olduğunuzu teyit eden akıllı bir check-in sistemidir. Eğer sizden haber alamazsak, sadece belirlediğiniz alıcıların çözebileceği uçtan uca şifreli acil durum mesajlarınızı otomatik olarak iletir.</p>
+                
+                <div class="hero-ctas">
+                    <!-- Google Play CTA -->
+                    <a href="#" class="store-btn">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M5,3H19A2,2 0 0,1 21,5V19A2,2 0 0,1 19,21H5A2,2 0 0,1 3,19V5A2,2 0 0,1 5,3M17.5,12A5.5,5.5 0 0,0 12,6.5A5.5,5.5 0 0,0 6.5,12A5.5,5.5 0 0,0 12,17.5A5.5,5.5 0 0,0 17.5,12M12,9A3,3 0 0,1 15,12A3,3 0 0,1 12,15A3,3 0 0,1 9,12A3,3 0 0,1 12,9Z" />
+                        </svg>
+                        <div class="btn-text">
+                            <span class="small-text" data-i18n="store_google_play_small">Hemen İndirin</span>
+                            <span class="big-text" data-i18n="store_google_play_big">Google Play</span>
+                        </div>
+                    </a>
+                    <!-- App Store CTA -->
+                    <a href="#" class="store-btn">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M18.71,19.5C17.88,20.74 17,21.95 15.66,22C14.32,22.05 13.89,21.24 12.37,21.24C10.84,21.24 10.37,21.97 9.1,22C7.79,22.05 6.8,20.68 5.96,19.47C4.25,17 2.94,12.45 4.7,9.39C5.57,7.87 7.13,6.91 8.82,6.88C10.1,6.86 11.32,7.75 12.11,7.75C12.89,7.75 14.37,6.68 15.92,6.84C16.57,6.87 18.39,7.1 19.56,8.82C19.47,8.88 17.39,10.1 17.41,12.63C17.44,15.65 20.06,16.66 20.1,16.67C20.08,16.74 19.67,18.11 18.71,19.5M15.97,4.17C16.63,3.37 17.07,2.28 16.95,1C16,1.04 14.9,1.6 14.24,2.38C13.68,3.04 13.19,4.14 13.34,5.39C14.39,5.47 15.4,4.88 15.97,4.17Z" />
+                        </svg>
+                        <div class="btn-text">
+                            <span class="small-text" data-i18n="store_app_store_small">App Store'dan</span>
+                            <span class="big-text" data-i18n="store_app_store_big">İndirin</span>
+                        </div>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- App Mockup -->
+            <div class="hero-mockup-wrapper">
+                <div class="phone-mockup">
+                    <div class="phone-notch"></div>
+                    <div class="phone-screen">
+                        <!-- Top Nav -->
+                        <div class="mockup-header">
+                            <div class="mockup-profile">
+                                <div class="mockup-avatar">A</div>
+                                <span style="font-size: 0.8rem; font-weight: 600;" data-i18n="mockup_greeting">Merhaba, Akın</span>
+                            </div>
+                            <div class="mockup-streak-badge">
+                                <span>🔥</span>
+                                <span data-i18n="mockup_streak">12 Gün</span>
+                            </div>
+                        </div>
+
+                        <!-- Status Dashboard -->
+                        <div class="mockup-status-card">
+                            <div class="mockup-status-label" data-i18n="mockup_status_label">GÜNLÜK DURUMUNUZ</div>
+                            <div class="mockup-status-time" style="color: #00f2fe;" data-i18n="mockup_status_value">Aktif & Güvende</div>
+                            <div style="font-size: 0.65rem; color: #94a3b8; margin-bottom: 0.5rem;" data-i18n="mockup_status_countdown">Sıradaki Check-in: 14 Saat Kaldı</div>
+                            <button class="mockup-checkin-btn" data-i18n="mockup_status_btn">Bugün İçin Check-in Yap</button>
+                        </div>
+
+                        <!-- Capsules List -->
+                        <div class="mockup-capsules-list">
+                            <div style="font-size: 0.75rem; font-weight: 700; color: #64748b; margin-bottom: 0.2rem; text-align: left;" data-i18n="mockup_capsules_title">KAPSÜLLERİNİZ</div>
+                            
+                            <div class="mockup-capsule">
+                                <div class="mockup-capsule-info">
+                                    <span class="mockup-capsule-name" data-i18n="mockup_capsule_1_name">Acil Durum Mesajı</span>
+                                    <span class="mockup-capsule-type" data-i18n="mockup_capsule_1_type">Metin • 1 Alıcı</span>
+                                </div>
+                                <div class="mockup-lock-badge" data-i18n="mockup_capsule_1_status">ŞİFRELİ</div>
+                            </div>
+                            
+                            <div class="mockup-capsule">
+                                <div class="mockup-capsule-info">
+                                    <span class="mockup-capsule-name" data-i18n="mockup_capsule_2_name">Miras Kapsülü</span>
+                                    <span class="mockup-capsule-type" data-i18n="mockup_capsule_2_type">Ses Kaydı • 2 Alıcı</span>
+                                </div>
+                                <div class="mockup-lock-badge locked" data-i18n="mockup_capsule_2_status">KİLİTLİ</div>
+                            </div>
+
+                            <div class="mockup-capsule">
+                                <div class="mockup-capsule-info">
+                                    <span class="mockup-capsule-name" data-i18n="mockup_capsule_3_name">Sosyal Medya Devri</span>
+                                    <span class="mockup-capsule-type" data-i18n="mockup_capsule_3_type">Video • 1 Alıcı</span>
+                                </div>
+                                <div class="mockup-lock-badge locked" data-i18n="mockup_capsule_3_status">KİLİTLİ</div>
+                            </div>
+                        </div>
+
+                        <!-- Points Footer -->
+                        <div class="mockup-points-indicator">
+                            <span data-i18n="mockup_points_label">Symi Puanı</span>
+                            <span style="color: #fb923c; font-weight: 700;" data-i18n="mockup_points_val">850 SP</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section id="how-it-works">
+        <div class="container">
+            <div class="section-header">
+                <h2 data-i18n="how_title">Vela Nasıl Çalışır?</h2>
+                <p data-i18n="how_subtitle">Emanetlerinizin doğru zamanda ve doğru kişilere ulaşması için kurguladığımız basit ve hatasız 4 adım.</p>
+            </div>
+            
+            <div class="timeline-grid">
+                <div class="timeline-card">
+                    <div class="timeline-num">01</div>
+                    <h3 data-i18n="how_step1_title">Mesajınızı Kilitleyin</h3>
+                    <p data-i18n="how_step1_desc">Metin, ses kaydı veya video formatında mesajınızı ekleyin. Mesajlarınız cihazınızda uçtan uca şifrelenir.</p>
+                </div>
+                <div class="timeline-card">
+                    <div class="timeline-num">02</div>
+                    <h3 data-i18n="how_step2_title">Alıcıları Belirleyin</h3>
+                    <p data-i18n="how_step2_desc">Mesajınızın iletileceği güvenilir kişilerin telefon numaralarını veya e-posta adreslerini tanımlayın.</p>
+                </div>
+                <div class="timeline-card">
+                    <div class="timeline-num">03</div>
+                    <h3 data-i18n="how_step3_title">Günlük Check-in Yapın</h3>
+                    <p data-i18n="how_step3_desc">Uygulamaya girerek güvende olduğunuzu belirtin. Her check-in size Symi Puanları kazandırır.</p>
+                </div>
+                <div class="timeline-card">
+                    <div class="timeline-num">04</div>
+                    <h3 data-i18n="how_step4_title">Güvenli İletim</h3>
+                    <p data-i18n="how_step4_desc">Belirlediğiniz sürede check-in yapmazsanız, sistem acil durum moduna geçer ve şifreyi çözerek mesajı iletir.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" style="background: rgba(12, 22, 43, 0.2);">
+        <div class="container">
+            <div class="section-header">
+                <h2><span data-i18n="features_title">Neden Vela?</span></h2>
+                <p data-i18n="features_subtitle">Sizlerin güvenliği ve huzuru için tasarladığımız premium özellikler.</p>
+            </div>
+            
+            <div class="features-grid">
+                <!-- E2E Encryption -->
+                <div class="feature-card">
+                    <div class="feature-icon-wrapper">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                    </div>
+                    <h3 data-i18n="feat_1_title">Sıfır Bilgi Güvenliği</h3>
+                    <p data-i18n="feat_1_desc">Kapsüllerinizin içerikleri uçtan uca şifrelenmiştir. Belirlediğiniz anahtar kelime veya şifre olmadan biz dahil hiç kimse içeriğe erişemez.</p>
+                </div>
+
+                <!-- Media Support -->
+                <div class="feature-card">
+                    <div class="feature-icon-wrapper">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                            <line x1="12" y1="19" x2="12" y2="23"></line>
+                            <line x1="8" y1="23" x2="16" y2="23"></line>
+                        </svg>
+                    </div>
+                    <h3 data-i18n="feat_2_title">Ses & Video Kapsülleri</h3>
+                    <p data-i18n="feat_2_desc">Sadece kuru bir metin değil; sevdiklerinize en sıcak ses tonunuzla hitap edebileceğiniz ses ve video kayıtları bırakın.</p>
+                </div>
+
+                <!-- Symi Points -->
+                <div class="feature-card">
+                    <div class="feature-icon-wrapper">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                        </svg>
+                    </div>
+                    <h3 data-i18n="feat_3_title">Symi Puan Sistemi</h3>
+                    <p data-i18n="feat_3_desc">Günlük check-in yaptıkça ve serinizi bozmadıkça Symi Puanları kazanırsınız. Bu puanlarla ek alıcı hakları satın alabilirsiniz.</p>
+                </div>
+
+                <!-- Smart Notification -->
+                <div class="feature-card">
+                    <div class="feature-icon-wrapper">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                        </svg>
+                    </div>
+                    <h3 data-i18n="feat_4_title">Akıllı Hatırlatıcılar</h3>
+                    <p data-i18n="feat_4_desc">Check-in yapmayı unutma riskine karşı size ve yedek cihazlarınıza push bildirimleri ve SMS uyarıları gönderilir.</p>
+                </div>
+
+                <!-- Tiers -->
+                <div class="feature-card">
+                    <div class="feature-icon-wrapper">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
+                        </svg>
+                    </div>
+                    <h3 data-i18n="feat_5_title">Abonelik Seviyeleri</h3>
+                    <p data-i18n="feat_5_desc">İster ücretsiz başlayın, isterseniz Basic, Silver, Gold, Diamond veya Galaxy planları ile sınırları kaldırın.</p>
+                </div>
+
+                <!-- Recipient Validation -->
+                <div class="feature-card">
+                    <div class="feature-icon-wrapper">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                    </div>
+                    <h3 data-i18n="feat_6_title">Alıcı Doğrulama</h3>
+                    <p data-i18n="feat_6_desc">Kapsüllerin yanlış kişilerin eline geçmesini engellemek için alıcılarınıza iletim anında iki aşamalı doğrulama uygulanır.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section id="pricing" style="background: linear-gradient(180deg, rgba(6, 12, 24, 0) 0%, rgba(12, 22, 43, 0.4) 50%, rgba(6, 12, 24, 0) 100%); border-top: 1px solid rgba(255,255,255,0.02);">
+        <div class="container">
+            <div class="section-header">
+                <h2 data-i18n="pricing_title">Tek Ödeme. Ömür Boyu Lisans.</h2>
+                <p data-i18n="pricing_subtitle">Vela'da aylık veya yıllık abonelik ücreti yoktur. Planınızı bir kez satın alır, ömür boyu sınırsızca kullanırsınız.</p>
+            </div>
+
+            <!-- Popular Plans Grid -->
+            <div class="pricing-grid">
+                <!-- Free Plan -->
+                <div class="pricing-card free-card">
+                    <div class="pricing-badge" data-i18n="pricing_free_badge">Sonsuza Kadar Free</div>
+                    <h3 data-i18n="plan_name_free">Free</h3>
+                    <div class="price-val" data-price-tier="free">0 <span>TL</span></div>
+                    <div class="price-period" data-i18n="pricing_free_badge">Sonsuza Kadar Ücretsiz</div>
+                    <p class="pricing-desc" data-i18n="pricing_free_desc">Temel güvenlik ihtiyaçlarınız için ideal giriş seviyesi paket.</p>
+                    <ul class="pricing-features">
+                        <li data-i18n="pricing_free_feat1">1 Adet Güvenli Alıcı</li>
+                        <li data-i18n="pricing_free_feat2">1 Adet Kapsül (Sadece Metin)</li>
+                        <li data-i18n="pricing_free_feat3">Günlük Check-in & Streak</li>
+                        <li data-i18n="pricing_free_feat4">%100 Reklamsız Deneyim</li>
+                        <li class="checked-feature" data-i18n="pricing_free_feat5">Sonsuza Kadar Ücretsiz Kalma Garantisi</li>
+                    </ul>
+                    <a href="#download-section" class="pricing-btn" data-i18n="pricing_free_btn">Ücretsiz Başla</a>
+                </div>
+
+                <!-- Silver Plan -->
+                <div class="pricing-card">
+                    <h3 data-i18n="plan_name_silver">Silver</h3>
+                    <div class="price-val" data-price-tier="silver">5 <span>$</span></div>
+                    <div class="price-period" data-i18n="pricing_one_time">Tek Seferlik Ödeme</div>
+                    <p class="pricing-desc" data-i18n="pricing_silver_desc">Sesli ve yazılı hatıralar bırakmak isteyenler için.</p>
+                    <ul class="pricing-features">
+                        <li data-i18n="pricing_gold_feat1">1 Adet Güvenli Alıcı</li>
+                        <li data-i18n="pricing_silver_feat2">1 Adet Kapsül (Metin + Ses)</li>
+                        <li data-i18n="pricing_gold_feat3">Günlük Check-in & Streak</li>
+                        <li data-i18n="pricing_gold_feat5">%100 Reklamsız Deneyim</li>
+                    </ul>
+                    <a href="#download-section" class="pricing-btn" data-i18n="pricing_gold_btn">Hemen Satın Al</a>
+                </div>
+
+                <!-- Gold Plan -->
+                <div class="pricing-card popular">
+                    <div class="pricing-badge-popular" data-i18n="pricing_gold_badge">En Popüler</div>
+                    <h3 data-i18n="plan_name_gold">Gold</h3>
+                    <div class="price-val" data-price-tier="gold">7 <span>$</span></div>
+                    <div class="price-period" data-i18n="pricing_one_time">Tek Seferlik Ödeme</div>
+                    <p class="pricing-desc" data-i18n="pricing_gold_desc">Sesli ve görüntülü hatıralar bırakmak isteyenler için.</p>
+                    <ul class="pricing-features">
+                        <li data-i18n="pricing_gold_feat1">1 Adet Güvenli Alıcı</li>
+                        <li data-i18n="pricing_gold_feat2">1 Adet Kapsül (Metin + Ses + Video)</li>
+                        <li data-i18n="pricing_gold_feat3">Günlük Check-in & Streak</li>
+                        <li data-i18n="pricing_gold_feat4">Symi Puanı Kazanımı</li>
+                        <li data-i18n="pricing_gold_feat5">%100 Reklamsız Deneyim</li>
+                    </ul>
+                    <a href="#download-section" class="pricing-btn popular-btn" data-i18n="pricing_gold_btn">Hemen Satın Al</a>
+                </div>
+
+                <!-- Blue Diamond Plan -->
+                <div class="pricing-card">
+                    <div class="pricing-badge" data-i18n="pricing_blue_diamond_badge" style="background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%); color: #060c18;">Geniş Aile</div>
+                    <h3 data-i18n="plan_name_blue_diamond">Blue Diamond</h3>
+                    <div class="price-val" data-price-tier="blue_diamond">12 <span>$</span></div>
+                    <div class="price-period" data-i18n="pricing_one_time">Tek Seferlik Ödeme</div>
+                    <p class="pricing-desc" data-i18n="pricing_blue_diamond_desc">Geniş aileler ve yüksek veri kapasitesi için ideal.</p>
+                    <ul class="pricing-features">
+                        <li data-i18n="pricing_blue_diamond_feat1">5 Adet Güvenli Alıcı</li>
+                        <li data-i18n="pricing_blue_diamond_feat2">5 Adet Kapsül (Tüm Medya Tipleri)</li>
+                        <li data-i18n="pricing_gold_feat3">Günlük Check-in & Streak</li>
+                        <li data-i18n="pricing_galaxy_feat4">Premium Öncelikli Destek</li>
+                        <li data-i18n="pricing_gold_feat5">%100 Reklamsız Deneyim</li>
+                    </ul>
+                    <a href="#download-section" class="pricing-btn" data-i18n="pricing_gold_btn">Hemen Satın Al</a>
+                </div>
+            </div>
+
+            <!-- Expandable Button for All Tiers -->
+            <div class="pricing-expand-wrapper">
+                <button class="expand-tiers-btn" id="expand-tiers-trigger">
+                    <span data-i18n="pricing_expand_btn">Tüm Paketleri ve Özellikleri Karşılaştır</span>
+                    <span class="expand-icon">↓</span>
+                </button>
+            </div>
+
+            <!-- Detailed Tiers Grid/Table (Hidden by Default) -->
+            <div class="pricing-detailed-table-container" id="detailed-tiers-container">
+                <div class="table-scroll-wrapper">
+                    <table class="detailed-pricing-table">
+                        <thead>
+                            <tr>
+                                <th data-i18n="table_th_plan">Plan İsmi</th>
+                                <th data-i18n="table_th_price">Fiyat (Tek Seferlik)</th>
+                                <th data-i18n="table_th_recipients">Alıcı Limiti</th>
+                                <th data-i18n="table_th_capsules">Kapsül Limiti</th>
+                                <th data-i18n="table_th_media">İzin Verilen İçerik</th>
+                                <th data-i18n="table_th_ads">Reklamsız Deneyim</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong data-i18n="plan_name_free">Free</strong></td>
+                                <td><span class="price-badge free" data-price-tier="free">0 $ / Sonsuza Kadar Free</span></td>
+                                <td>1 <span data-i18n="form_tab_support">Alıcı</span></td>
+                                <td>1 <span data-i18n="mockup_capsules_title">Kapsül</span></td>
+                                <td data-i18n="table_td_media_text">Sadece Metin</td>
+                                <td data-i18n="table_td_no">Hayır</td>
+                            </tr>
+                            <tr>
+                                <td><strong data-i18n="plan_name_basic">Basic</strong></td>
+                                <td data-price-tier="basic">2 $</td>
+                                <td>1 <span data-i18n="form_tab_support">Alıcı</span></td>
+                                <td>1 <span data-i18n="mockup_capsules_title">Kapsül</span></td>
+                                <td data-i18n="table_td_media_text">Sadece Metin</td>
+                                <td data-i18n="table_td_yes">Evet</td>
+                            </tr>
+                            <tr>
+                                <td><strong data-i18n="plan_name_silver">Silver</strong></td>
+                                <td data-price-tier="silver">5 $</td>
+                                <td>1 <span data-i18n="form_tab_support">Alıcı</span></td>
+                                <td>1 <span data-i18n="mockup_capsules_title">Kapsül</span></td>
+                                <td data-i18n="table_td_media_audio">Metin + Ses</td>
+                                <td data-i18n="table_td_yes">Evet</td>
+                            </tr>
+                            <tr class="table-highlight">
+                                <td><strong data-i18n="plan_name_gold">Gold</strong></td>
+                                <td data-price-tier="gold">7 $</td>
+                                <td>1 <span data-i18n="form_tab_support">Alıcı</span></td>
+                                <td>1 <span data-i18n="mockup_capsules_title">Kapsül</span></td>
+                                <td data-i18n="table_td_media_video">Metin + Ses + Video</td>
+                                <td data-i18n="table_td_yes">Evet</td>
+                            </tr>
+                            <tr>
+                                <td><strong data-i18n="plan_name_diamond">Diamond</strong></td>
+                                <td data-price-tier="diamond">9 $</td>
+                                <td>2 <span data-i18n="form_tab_support">Alıcı</span></td>
+                                <td>2 <span data-i18n="mockup_capsules_title">Kapsül</span></td>
+                                <td data-i18n="table_td_media_all">Tüm Medya Tipleri</td>
+                                <td data-i18n="table_td_yes">Evet</td>
+                            </tr>
+                            <tr>
+                                <td><strong data-i18n="plan_name_blue_diamond">Blue Diamond</strong></td>
+                                <td data-price-tier="blue_diamond">12 $</td>
+                                <td>5 <span data-i18n="form_tab_support">Alıcı</span></td>
+                                <td>5 <span data-i18n="mockup_capsules_title">Kapsül</span></td>
+                                <td data-i18n="table_td_media_all">Tüm Medya Tipleri</td>
+                                <td data-i18n="table_td_yes">Evet</td>
+                            </tr>
+                            <tr>
+                                <td><strong data-i18n="plan_name_platinum">Platinum</strong></td>
+                                <td data-price-tier="platinum">20 $</td>
+                                <td>25 <span data-i18n="form_tab_support">Alıcı</span></td>
+                                <td>25 <span data-i18n="mockup_capsules_title">Kapsül</span></td>
+                                <td data-i18n="table_td_media_all">Tüm Medya Tipleri</td>
+                                <td data-i18n="table_td_yes">Evet</td>
+                            </tr>
+                            <tr class="table-galaxy-highlight">
+                                <td><strong data-i18n="plan_name_galaxy">Galaxy</strong></td>
+                                <td data-price-tier="galaxy">50 $</td>
+                                <td data-i18n="table_td_unlimited">Sınırsız</td>
+                                <td data-i18n="table_td_unlimited">Sınırsız</td>
+                                <td data-i18n="table_td_media_all">Tüm Medya Tipleri</td>
+                                <td data-i18n="table_td_yes">Evet</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Disclaimers / Policy Explanations -->
+            <div class="pricing-disclaimers">
+                <div class="disclaimer-item">
+                    <h4 data-i18n="pricing_disc_title1">🔒 Ömür Boyu Tek Ödeme</h4>
+                    <p data-i18n="pricing_disc_desc1">Vela planlarında aylık, yıllık veya dönemsel tekrar eden hiçbir ücretlendirme yapılmaz. Satın aldığınız lisans ömür boyu hesabınıza tanımlanır.</p>
+                </div>
+                <div class="disclaimer-item">
+                    <h4 data-i18n="pricing_disc_title2">🆓 Kesinlikle Ücretsiz Giriş Paketi</h4>
+                    <p data-i18n="pricing_disc_desc2">Temel acil durum ihtiyaçlarınızı karşılayan "Free" paketi her zaman ücretsiz kalacaktır. Bu giriş seviyesi paketimiz için ilerleyen dönemlerde de hiçbir şekilde ücret talep edilmeyeceğini taahhüt ediyoruz.</p>
+                </div>
+                <div class="disclaimer-item">
+                    <h4 data-i18n="pricing_disc_title3">🚫 Reklamsızlık Taahhüdü ve Gelecek Politikası</h4>
+                    <p data-i18n="pricing_disc_desc3">İster ücretsiz "Free" paketini, ister en üst seviyedeki "Galaxy" paketini kullanın; uygulamamızın hiçbir yerinde reklam veya benzeri dikkat dağıtıcı öğeler barındırmıyoruz. (Not: Bu politikamız şu an için geçerli olup, ilerleyen yıllarda artabilecek sunucu, veri saklama ve operasyonel altyapı giderlerini karşılayabilmek adına politikada değişiklik yapma ve gerekirse giriş seviyesi paketlerde reklam gösterme hakkımız saklıdır.)</p>
+                </div>
+                <div class="disclaimer-item">
+                    <h4 data-i18n="pricing_disc_title4">👥 Ek Kullanıcı Lisansı</h4>
+                    <p data-i18n="pricing_disc_desc4">Gold ve üzeri paketlerde ek alıcı/kullanıcı ekleme hakkı kullanıcı başına 2 USD (veya yerel karşılığı) tek seferlik ücretle satın alınabilir.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section id="faq">
+        <div class="container">
+            <div class="section-header">
+                <h2 data-i18n="faq_title">Sıkça Sorulan Sorular</h2>
+                <p data-i18n="faq_subtitle">Vela kullanımı, güvenlik protokolleri ve hesap yönetimi hakkında merak ettikleriniz.</p>
+            </div>
+
+            <!-- FAQ Search -->
+            <div class="faq-search-wrapper">
+                <span class="faq-search-icon">🔍</span>
+                <input type="text" id="faq-search" class="faq-search-input" placeholder="Bir soru arayın (örn. Güvenlik, Check-in)..." data-i18n-placeholder="faq_search_placeholder">
+            </div>
+
+            <!-- FAQ Categories -->
+            <div class="faq-categories">
+                <button class="faq-cat-btn active" data-category="all" data-i18n="faq_cat_all">Tümü</button>
+                <button class="faq-cat-btn" data-category="genel" data-i18n="faq_cat_genel">Genel Sorular</button>
+                <button class="faq-cat-btn" data-category="guvenlik" data-i18n="faq_cat_guvenlik">Güvenlik & Şifreleme</button>
+                <button class="faq-cat-btn" data-category="uyelik" data-i18n="faq_cat_uyelik">Üyelik & Abonelik</button>
+                <button class="faq-cat-btn" data-category="teknik" data-i18n="faq_cat_teknik">Teknik Detaylar</button>
+            </div>
+
+            <!-- FAQ List -->
+            <div class="faq-list">
+                <!-- Q1 -->
+                <div class="faq-item" id="faq-1" data-category="genel">
+                    <button class="faq-trigger">
+                        <span data-i18n="faq_q1">Vela nedir ve temel olarak nasıl çalışır?</span>
+                        <div class="faq-actions-wrapper">
+                            <span class="faq-share-btn" title="Bağlantıyı Kopyala">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                            </span>
+                            <span class="faq-icon">+</span>
+                        </div>
+                    </button>
+                    <div class="faq-content">
+                        <div class="faq-content-inner" data-i18n="faq_a1">
+                            Vela, acil durum veya hayatın sonlanması durumlarında sevdiklerinize iletmek istediğiniz özel mesajları (kapsülleri) saklayan bir uygulamadır. Sistem, düzenli aralıklarla check-in yapmanızı ister. Belirlediğiniz süre boyunca check-in yapmamanız durumunda (örneğin 7 gün boyunca bildirimlere yanıt vermediğinizde), sistem aktif duruma geçer ve kapsüllerinizi belirlediğiniz alıcılara güvenle iletir.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Q2 -->
+                <div class="faq-item" id="faq-2" data-category="guvenlik">
+                    <button class="faq-trigger">
+                        <span data-i18n="faq_q2">Mesajlarım ne kadar güvende? Vela yöneticileri bunları okuyabilir mi?</span>
+                        <div class="faq-actions-wrapper">
+                            <span class="faq-share-btn" title="Bağlantıyı Kopyala">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                            </span>
+                            <span class="faq-icon">+</span>
+                        </div>
+                    </button>
+                    <div class="faq-content">
+                        <div class="faq-content-inner" data-i18n="faq_a2">
+                            Vela tamamen "Sıfır Bilgi" (Zero-Knowledge) mimariyle kurulmuştur. Mesajlarınız henüz cihazınızdan çıkmadan, kendi belirlediğiniz şifre kullanılarak AES-256 algoritmasıyla şifrelenir. Şifrelenmiş içerik sunucularımızda saklanır. Şifreniz sunucularımızda asla düz metin olarak tutulmaz. Dolayısıyla Symi ekibi veya üçüncü taraflar dahil hiç kimse mesajlarınızı okuyamaz.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Q3 -->
+                <div class="faq-item" id="faq-3" data-category="genel">
+                    <button class="faq-trigger">
+                        <span data-i18n="faq_q3">Check-in yapmayı bir gün unutursam kapsüller hemen açılır mı?</span>
+                        <div class="faq-actions-wrapper">
+                            <span class="faq-share-btn" title="Bağlantıyı Kopyala">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                            </span>
+                            <span class="faq-icon">+</span>
+                        </div>
+                    </button>
+                    <div class="faq-content">
+                        <div class="faq-content-inner" data-i18n="faq_a3">
+                            Hayır. Check-in süresini ve tolerans limitini profil ayarlarınızdan kendiniz belirlersiniz. Varsayılan olarak üst üste 7 gün boyunca check-in yapılmadığında kapsüller tetiklenir. Ayrıca bu süre yaklaşırken sistem size push bildirimleri ve SMS gönderir.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Q4 -->
+                <div class="faq-item" id="faq-4" data-category="uyelik">
+                    <button class="faq-trigger">
+                        <span data-i18n="faq_q4">Symi Puanı (SP) nedir ve ne işe yarar?</span>
+                        <div class="faq-actions-wrapper">
+                            <span class="faq-share-btn" title="Bağlantıyı Kopyala">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                            </span>
+                            <span class="faq-icon">+</span>
+                        </div>
+                    </button>
+                    <div class="faq-content">
+                        <div class="faq-content-inner" data-i18n="faq_a4">
+                            Symi Puanı, Vela uygulamasındaki sadakat sistemidir. Her gün düzenli check-in yaparak check-in serileri (streak) oluşturduğunuzda puan kazanırsınız. Kazandığınız bu puanları, mağaza sekmesinden ek alıcı hakları veya özel kapsül türleri satın almak için kullanabilirsiniz.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Q5 -->
+                <div class="faq-item" id="faq-5" data-category="uyelik">
+                    <button class="faq-trigger">
+                        <span data-i18n="faq_q5">Abonelik paketlerinin farkları nelerdir? Ücretsiz paket var mı?</span>
+                        <div class="faq-actions-wrapper">
+                            <span class="faq-share-btn" title="Bağlantıyı Kopyala">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                            </span>
+                            <span class="faq-icon">+</span>
+                        </div>
+                    </button>
+                    <div class="faq-content">
+                        <div class="faq-content-inner" data-i18n="faq_a5">
+                            Evet, Vela'yı "Free" plan ile ücretsiz olarak kullanabilirsiniz. Ücretsiz planda 1 adet alıcı ve 1 adet metin mesajı hakkınız bulunur. İhtiyacınıza göre Basic, Silver (ses desteği), Gold (video desteği), Diamond veya Galaxy (sınırsız) planlarına geçiş yaparak kapasitenizi artırabilirsiniz.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Q6 -->
+                <div class="faq-item" id="faq-6" data-category="teknik">
+                    <button class="faq-trigger">
+                        <span data-i18n="faq_q6">Telefonumu kaybedersem veya uygulamayı silersem kapsüllerim kaybolur mu?</span>
+                        <div class="faq-actions-wrapper">
+                            <span class="faq-share-btn" title="Bağlantıyı Kopyala">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                            </span>
+                            <span class="faq-icon">+</span>
+                        </div>
+                    </button>
+                    <div class="faq-content">
+                        <div class="faq-content-inner" data-i18n="faq_a6">
+                            Kapsülleriniz bulut sunucularımızda şifreli olarak yedeklenir. Yeni bir cihaza geçiş yaptığınızda veya uygulamayı yeniden kurduğunuzda, kullanıcı adı ve şifrenizle giriş yaparak eski kapsüllerinize güvenle erişebilirsiniz. Ancak mesajın şifresini çözmek için kapsülü oluştururken kullandığınız şifreyi hatırlamanız gerekmektedir.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Q7 -->
+                <div class="faq-item" id="faq-7" data-category="teknik">
+                    <button class="faq-trigger">
+                        <span data-i18n="faq_q7">Alıcılara mesajlar nasıl iletiliyor? Onların Vela kullanması şart mı?</span>
+                        <div class="faq-actions-wrapper">
+                            <span class="faq-share-btn" title="Bağlantıyı Kopyala">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                            </span>
+                            <span class="faq-icon">+</span>
+                        </div>
+                    </button>
+                    <div class="faq-content">
+                        <div class="faq-content-inner" data-i18n="faq_a7">
+                            Belirlediğiniz alıcıların Vela uygulamasını yüklemiş olması zorunlu değildir. Kapsül tetiklendiğinde alıcılara SMS veya E-posta yoluyla güvenli bir bağlantı gönderilir. Alıcılar bu bağlantıya tıklayıp kendi telefon/e-posta adreslerine gelen tek kullanımlık doğrulama kodunu (OTP) girdikten sonra mesajınızı görüntüleyebilir veya indirebilir.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FAQ No Results -->
+            <div class="faq-no-results" data-i18n="faq_no_results">
+                Aramanıza uygun bir soru bulunamadı. Lütfen aşağıdaki destek formundan bizimle iletişime geçin.
+            </div>
+        </div>
+    </section>
+
+    <!-- Support and Forms Section -->
+    <section id="support" class="support-section">
+        <div class="container support-container">
+            <div class="section-header">
+                <h2 data-i18n="form_title">İşlemler ve Talepler</h2>
+                <p data-i18n="form_subtitle">Bizimle iletişime geçin, teknik destek alın veya üyelik silme talebinizi hızlıca iletin. Formlar doğrudan info@symi.com.tr adresine ulaşmaktadır.</p>
+            </div>
+
+            <!-- Tab Headers -->
+            <div class="form-tabs">
+                <button class="form-tab-btn active" data-tab="contact" data-i18n="form_tab_contact">
+                    İletişim Formu
+                </button>
+                <button class="form-tab-btn" data-tab="support" data-i18n="form_tab_support">
+                    Destek Talebi
+                </button>
+                <button class="form-tab-btn tab-delete" data-tab="delete" data-i18n="form_tab_delete">
+                    Üyelik Silme
+                </button>
+            </div>
+
+            <!-- Form Card Wrapper -->
+            <div class="form-card">
+                
+                <!-- PANE 1: İletişim Formu -->
+                <div class="form-pane active" id="contact-pane">
+                    <h3 data-i18n="form_contact_title">İletişim Formu</h3>
+                    <p class="form-subtitle" data-i18n="form_contact_desc">Genel sorularınız, iş ortaklığı veya önerileriniz için bize yazın.</p>
+                    
+                    <form id="contact-form" novalidate>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="contact-name" data-i18n="form_label_name">Ad Soyad</label>
+                                <input type="text" id="contact-name" name="name" class="form-control" placeholder="Örn. Akın Karadaş" data-i18n-placeholder="form_placeholder_name" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="contact-email" data-i18n="form_label_email">E-Posta Adresiniz</label>
+                                <input type="email" id="contact-email" name="email" class="form-control" placeholder="Örn. akin@symi.com.tr" data-i18n-placeholder="form_placeholder_email" required>
+                            </div>
+                            
+                            <div class="form-group form-group-full">
+                                <label for="contact-subject" data-i18n="form_label_subject">Konu</label>
+                                <input type="text" id="contact-subject" name="subject" class="form-control" placeholder="Örn. İş birliği teklifi veya genel soru" data-i18n-placeholder="form_placeholder_subject" required>
+                            </div>
+                            
+                            <div class="form-group form-group-full">
+                                <label for="contact-message" data-i18n="form_label_message">Mesajınız</label>
+                                <textarea id="contact-message" name="message" class="form-control" placeholder="Mesajınızı buraya yazınız..." data-i18n-placeholder="form_placeholder_message" required></textarea>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="submit-btn">
+                            <span class="btn-text" data-i18n="form_btn_submit_msg">Mesajı Gönder</span>
+                            <div class="spinner"></div>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- PANE 2: Destek Talebi -->
+                <div class="form-pane" id="support-pane">
+                    <h3 data-i18n="form_support_title">Destek Talebi (Support Ticket)</h3>
+                    <p class="form-subtitle" data-i18n="form_support_desc">Uygulama içi yaşadığınız teknik aksaklıklar, hata bildirimleri veya ödeme sorunları.</p>
+                    
+                    <form id="support-form" novalidate>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="support-name" data-i18n="form_label_name">Ad Soyad</label>
+                                <input type="text" id="support-name" name="name" class="form-control" placeholder="Örn. Akın Karadaş" data-i18n-placeholder="form_placeholder_name" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="support-email" data-i18n="form_label_support_email">Kayıtlı E-Posta Adresiniz</label>
+                                <input type="email" id="support-email" name="email" class="form-control" placeholder="Örn. akin@symi.com.tr" data-i18n-placeholder="form_placeholder_email" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="support-category" data-i18n="form_label_category">Destek Kategorisi</label>
+                                <select id="support-category" name="category" class="form-control" required>
+                                    <option value="" disabled selected data-i18n="form_select_cat">Kategori Seçiniz</option>
+                                    <option value="Hata Bildirimi (Bug)" data-i18n="form_cat_bug">Hata Bildirimi (Bug)</option>
+                                    <option value="Odeme ve Faturalandirma" data-i18n="form_cat_payment">Ödeme & Faturalandırma</option>
+                                    <option value="Teknik Sorun" data-i18n="form_cat_tech">Teknik Sorun / Check-in Sorunu</option>
+                                    <option value="Oneri ve Feedback" data-i18n="form_cat_feedback">Öneri & Geri Bildirim</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="support-ticket-id" data-i18n="form_label_ticket_id">Hesap / Bilet Kodu (Opsiyonel)</label>
+                                <input type="text" id="support-ticket-id" name="ticket_id" class="form-control" placeholder="Örn. VLA-19283" data-i18n-placeholder="form_placeholder_ticket_id">
+                            </div>
+                            
+                            <div class="form-group form-group-full">
+                                <label for="support-details" data-i18n="form_label_details">Detaylı Açıklama</label>
+                                <textarea id="support-details" name="details" class="form-control" placeholder="Karşılaştığınız sorunu lütfen detaylıca açıklayın..." data-i18n-placeholder="form_placeholder_details" required></textarea>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="submit-btn">
+                            <span class="btn-text" data-i18n="form_btn_submit_support">Destek Talebi Oluştur</span>
+                            <div class="spinner"></div>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- PANE 3: Üyelik Silme Formu -->
+                <div class="form-pane" id="delete-pane">
+                    <h3 style="color: #ef4444;" data-i18n="form_delete_title">Üyelik ve Hesap Silme</h3>
+                    <p class="form-subtitle" data-i18n="form_delete_desc">Vela hesabınızı ve sistemde kayıtlı tüm kapsüllerinizi kalıcı olarak silmek için bu formu doldurun.</p>
+                    
+                    <div class="delete-warning-box">
+                        <h4 data-i18n="form_delete_warning_title">⚠️ DİKKAT: Kalıcı Silme Öncesi Bilmeniz Gerekenler</h4>
+                        <ul>
+                            <li data-i18n="form_delete_warning_li1"><strong>Mesajlarınızı Kendiniz Silmelisiniz:</strong> Vela "Sıfır-Bilgi" (Zero-Knowledge) uçtan uca şifreleme altyapısına sahiptir. Kapsüllerinizin şifresini çözemeyiz ve içeriklerini göremeyiz. Bu nedenle, hesabınızı silmeden önce uygulama içerisindeki tüm şifreli kapsüllerinizi kendiniz silmelisiniz; sistem yöneticilerimiz sizin adınıza bu mesajları silemez.</li>
+                            <li data-i18n="form_delete_warning_li2"><strong>Ücret İadesi Yoktur:</strong> Satın alınan ömür boyu lisans paketleri (Basic, Silver, Gold, vb.) için hesap silme veya üyelik iptali işleminden sonra geriye dönük herhangi bir ücret iadesi ya da kısmi iade politikamız bulunmamaktadır.</li>
+                        </ul>
+                    </div>
+
+                    <!-- SSO Verification Option -->
+                    <div class="sso-verification-wrapper">
+                        <span class="sso-title" data-i18n="form_sso_title">Kayıt Yönteminizle Doğrulayın (Opsiyonel)</span>
+                        <div class="sso-buttons">
+                            <button type="button" class="sso-btn google-btn" id="sso-google-btn">
+                                <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M12.24 10.285V14.4h6.887c-.648 2.41-2.519 4.114-5.136 4.114A5.79 5.79 0 0 1 8.2 12.725a5.79 5.79 0 0 1 5.79-5.79c2.49 0 4.414 1.05 5.358 1.95l3.18-3.18C20.59 3.864 17.58 2.125 13.99 2.125A9.87 9.87 0 0 0 4.12 12a9.87 9.87 0 0 0 9.87 9.875c5.38 0 9.87-3.89 9.87-9.875 0-.67-.08-1.18-.21-1.72H12.24Z"/></svg>
+                                <span>Google</span>
+                            </button>
+                            <button type="button" class="sso-btn apple-btn" id="sso-apple-btn">
+                                <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.5-1.34.05-1.77-.76-3.29-.76-1.53 0-2 1.53-3.27 1.56-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.44 1.44-1.38 2.82M15.97 4.17c.66-.8 1.1-1.89.98-3.17-1 .04-2.1.6-2.76 1.38-.56.66-1.05 1.76-.9 3.01 1.05.08 2.06-.51 2.68-1.22Z"/></svg>
+                                <span>Apple</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <form id="delete-form" novalidate>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="delete-name" data-i18n="form_label_name">Ad Soyad</label>
+                                <input type="text" id="delete-name" name="name" class="form-control" placeholder="Örn. Akın Karadaş" data-i18n-placeholder="form_placeholder_name" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="delete-email" data-i18n="form_label_delete_email">Vela Kayıtlı E-Posta Adresi</label>
+                                <input type="email" id="delete-email" name="email" class="form-control" placeholder="Örn. akin@symi.com.tr" data-i18n-placeholder="form_placeholder_email" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="delete-phone" data-i18n="form_label_phone">Kayıtlı Telefon Numarası</label>
+                                <input type="tel" id="delete-phone" name="phone" class="form-control" placeholder="Örn. +90 555 555 5555" data-i18n-placeholder="form_placeholder_phone" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="delete-reason" data-i18n="form_label_reason">Silme Nedeni</label>
+                                <select id="delete-reason" name="reason" class="form-control" required>
+                                    <option value="" disabled selected data-i18n="form_select_reason">Lütfen bir neden seçin</option>
+                                    <option value="Uygulamayi artik kullanmiyorum" data-i18n="form_reason_no_longer">Uygulamayı artık kullanmıyorum</option>
+                                    <option value="Gizlilik endiseleri" data-i18n="form_reason_privacy">Gizlilik endişeleri</option>
+                                    <option value="Teknik sorunlar yasadim" data-i18n="form_reason_bugs">Çok sık teknik sorun yaşadım</option>
+                                    <option value="Diger" data-i18n="form_reason_other">Diğer</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group form-group-full">
+                                <label class="form-checkbox-label">
+                                    <input type="checkbox" id="confirm-delete" required>
+                                    <span data-i18n="form_delete_confirm">Yukarıda belirtilen iki hayati koşulu (mesajlarımı silme sorumluluğunun şahsıma ait olduğunu ve herhangi bir ücret iadesi alamayacağımı), ayrıca uygulamaya kaydolarak kabul ettiğim <a href="javascript:void(0)" class="open-privacy-link" style="color: var(--primary); text-decoration: underline;">Kullanıcı Sözleşmesi ve Gizlilik Politikası</a> hükümlerini okudum, anladım ve kabul ediyorum.</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="submit-btn delete-btn">
+                            <span class="btn-text" data-i18n="form_btn_submit_delete">Hesabımı Kalıcı Olarak Sil</span>
+                            <div class="spinner"></div>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- App Download CTA Section -->
+    <section id="download-section" style="background: linear-gradient(135deg, rgba(0, 242, 254, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%); border-top: 1px solid var(--border-color); text-align: center; padding: 6rem 0;">
+        <div class="container" style="max-width: 800px; display: flex; flex-direction: column; gap: 2rem; align-items: center;">
+            <h2 style="font-family: var(--font-heading); font-size: 2.5rem; font-weight: 800;" data-i18n="download_title">Güvende Kalmaya Bugün Başlayın</h2>
+            <p style="color: var(--text-secondary); font-size: 1.1rem; max-width: 600px;" data-i18n="download_subtitle">Vela uygulamasını şimdi indirin, acil durum planlarınızı ve dijital miras kapsüllerinizi oluşturarak sevdiklerinizin geleceğini güvence altına edin.</p>
+            <div class="hero-ctas" style="margin-top: 1rem;">
+                <!-- Google Play Button -->
+                <a href="#" class="store-btn">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M5,3H19A2,2 0 0,1 21,5V19A2,2 0 0,1 19,21H5A2,2 0 0,1 3,19V5A2,2 0 0,1 5,3M17.5,12A5.5,5.5 0 0,0 12,6.5A5.5,5.5 0 0,0 6.5,12A5.5,5.5 0 0,0 12,17.5A5.5,5.5 0 0,0 17.5,12M12,9A3,3 0 0,1 15,12A3,3 0 0,1 12,15A3,3 0 0,1 9,12A3,3 0 0,1 12,9Z" />
+                    </svg>
+                    <div class="btn-text">
+                        <span class="small-text" data-i18n="store_google_play_small">Hemen İndirin</span>
+                        <span class="big-text" data-i18n="store_google_play_big">Google Play</span>
+                    </div>
+                </a>
+                <!-- App Store Button -->
+                <a href="#" class="store-btn">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M18.71,19.5C17.88,20.74 17,21.95 15.66,22C14.32,22.05 13.89,21.24 12.37,21.24C10.84,21.24 10.37,21.97 9.1,22C7.79,22.05 6.8,20.68 5.96,19.47C4.25,17 2.94,12.45 4.7,9.39C5.57,7.87 7.13,6.91 8.82,6.88C10.1,6.86 11.32,7.75 12.11,7.75C12.89,7.75 14.37,6.68 15.92,6.84C16.57,6.87 18.39,7.1 19.56,8.82C19.47,8.88 17.39,10.1 17.41,12.63C17.44,15.65 20.06,16.66 20.1,16.67C20.08,16.74 19.67,18.11 18.71,19.5M15.97,4.17C16.63,3.37 17.07,2.28 16.95,1C16,1.04 14.9,1.6 14.24,2.38C13.68,3.04 13.19,4.14 13.34,5.39C14.39,5.47 15.4,4.88 15.97,4.17Z" />
+                    </svg>
+                    <div class="btn-text">
+                        <span class="small-text" data-i18n="store_app_store_small">App Store'dan</span>
+                        <span class="big-text" data-i18n="store_app_store_big">İndirin</span>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Global Toast Notifications Container -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container footer-grid">
+            <div class="footer-brand">
+                <a href="#" class="logo">
+                    <div class="logo-icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                        </svg>
+                    </div>
+                    <span>VELA</span>
+                </a>
+                <p data-i18n="footer_brand_desc">Vela, Symi bünyesinde geliştirilmiş güvenli bir dijital acil durum check-in ve miras yönetimi çözümüdür.</p>
+            </div>
+            
+            <div class="footer-links-col">
+                <h4 data-i18n="footer_quick_links">Hızlı Bağlantılar</h4>
+                <ul>
+                    <li><a href="#how-it-works" data-i18n="nav_how_it_works">Nasıl Çalışır?</a></li>
+                    <li><a href="#features" data-i18n="nav_features">Özellikler</a></li>
+                    <li><a href="#pricing" data-i18n="nav_pricing">Fiyatlandırma</a></li>
+                    <li><a href="#faq" data-i18n="nav_faq">Sıkça Sorulan Sorular</a></li>
+                    <li><a href="#support" data-i18n="nav_support">İletişim & Destek</a></li>
+                </ul>
+            </div>
+            
+            <div class="footer-links-col">
+                <h4 data-i18n="footer_contact_info">Symi İletişim</h4>
+                <ul style="color: var(--text-secondary); font-size: 0.95rem;">
+                    <li>E-posta: <a href="mailto:info@symi.com.tr" style="padding-left:0; color:var(--primary);">info@symi.com.tr</a></li>
+                    <li>Web: <a href="https://symi.com.tr" target="_blank" style="padding-left:0; color:var(--text-secondary);">symi.com.tr</a></li>
+                    <li data-i18n="footer_contact_hours">Destek Saatleri: 09:00 - 18:00 (Pzt-Cmt)</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="container footer-bottom">
+            <p>&copy; 2026 Vela App. <span data-i18n="footer_copyright">Tüm Hakları Saklıdır. Bir Symi iştirakidir.</span></p>
+            <div class="footer-bottom-links">
+                <a href="javascript:void(0)" class="open-privacy-link" data-i18n="footer_link_terms">Kullanım Koşulları</a>
+                <a href="javascript:void(0)" class="open-privacy-link" data-i18n="footer_link_privacy">Gizlilik Politikası</a>
+                <a href="javascript:void(0)" class="open-privacy-link" data-i18n="footer_link_kvkk">KVKK Aydınlatma Metni</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- First-Load Language Selector Modal Popup -->
+    <div id="first-load-lang-modal" class="modal first-load-modal">
+        <div class="modal-content lang-select-content">
+            <h2 style="text-align: center; margin-bottom: 0.5rem; font-family: var(--font-heading); font-size: 1.8rem; font-weight: 800;">Dil Seçimi / Language Select</h2>
+            <p style="text-align: center; color: var(--text-secondary); margin-bottom: 2rem; font-size: 0.95rem;">Lütfen devam etmek için bir dil seçin / Please select a language to continue</p>
+            <div class="lang-selection-grid">
+                <button class="lang-select-box" data-lang="tr"><span class="flag">🇹🇷</span><span class="name">Türkçe</span></button>
+                <button class="lang-select-box" data-lang="en"><span class="flag">🇺🇸</span><span class="name">English</span></button>
+                <button class="lang-select-box" data-lang="de"><span class="flag">🇩🇪</span><span class="name">Deutsch</span></button>
+                <button class="lang-select-box" data-lang="it"><span class="flag">🇮🇹</span><span class="name">Italiano</span></button>
+                <button class="lang-select-box" data-lang="fr"><span class="flag">🇫🇷</span><span class="name">Français</span></button>
+                <button class="lang-select-box" data-lang="es"><span class="flag">🇪🇸</span><span class="name">Español</span></button>
+                <button class="lang-select-box" data-lang="ar"><span class="flag">🇸🇦</span><span class="name">العربية</span></button>
+                <button class="lang-select-box" data-lang="hi"><span class="flag">🇮🇳</span><span class="name">हिन्दी</span></button>
+                <button class="lang-select-box" data-lang="ko"><span class="flag">🇰🇷</span><span class="name">한국어</span></button>
+                <button class="lang-select-box" data-lang="ja"><span class="flag">🇯🇵</span><span class="name">日本語</span></button>
+                <button class="lang-select-box" data-lang="zh"><span class="flag">🇨🇳</span><span class="name">中文</span></button>
+                <button class="lang-select-box" data-lang="ru"><span class="flag">🇷🇺</span><span class="name">Русский</span></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Privacy & Terms Modal Popup -->
+    <div id="privacy-modal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" id="privacy-modal-close" aria-label="Kapat">&times;</button>
+            <h2 class="modal-title" data-i18n="modal_title">Gizlilik Politikası, Kullanım Şartları ve Veri Güvenliği Sözleşmesi</h2>
+            <div class="modal-body-content">
+                <p class="modal-intro" data-i18n="modal_intro">Lütfen bu sözleşmeyi dikkatlice okuyunuz. Vela uygulamasını indirip bir hesap oluşturduğunuzda, bu sözleşmedeki tüm maddeleri ve koşulları peşinen kabul etmiş ve onaylamış sayılmaktasınız.</p>
+                
+                <div class="privacy-section-block">
+                    <h3 data-i18n="modal_sec1_title">1. Giriş ve Yürürlük</h3>
+                    <p data-i18n="modal_sec1_text">Symi firması tarafından geliştirilen Vela uygulamasına kaydolan her kullanıcı, bu sözleşmedeki tüm şartları okumuş, anlamış ve peşinen kabul etmiş sayılır. Bu kurallar hem ücretsiz (Free) paket kullanan hem de ücretli paket satın alan tüm üyelerimiz için geçerlidir.</p>
+                </div>
+
+                <div class="privacy-section-block">
+                    <h3 data-i18n="modal_sec2_title">2. Sıfır Bilgi (Zero-Knowledge) Uçtan Uca Şifreleme Protokolü</h3>
+                    <p data-i18n="modal_sec2_text">Vela uygulaması, kullanıcı güvenliğini en üst düzeyde korumak amacıyla "Sıfır Bilgi" mimarisini benimsemiştir. Oluşturduğunuz tüm dijital kapsüller (metinler, ses kayıtları, video dosyaları) sunucularımıza gönderilmeden önce, kendi cihazınızda sizin belirlediğiniz özel şifreleme anahtarı (parola) kullanılarak askeri düzeyde AES-256 algoritmasıyla şifrelenir. Şifreleme anahtarınız hiçbir şekilde sunucularımızda saklanmaz veya veritabanlarımızda tutulmaz. Bu sebeple şifresini kaybeden kullanıcılara şifre çözme veya veri kurtarma desteği sunulması teknik olarak mümkün değildir.</p>
+                </div>
+
+                <div class="privacy-section-block">
+                    <h3 data-i18n="modal_sec3_title">3. Kimlik Bilgilerinin Saklanması ve Paylaşımı</h3>
+                    <p data-i18n="modal_sec3_text">Uygulamaya kayıt esnasında sağladığınız ad, soyad, e-posta adresi ve telefon numarası gibi kişisel verileriniz, yalnızca hesabınızın güvenliğini sağlamak, check-in doğrulamaları yapmak ve acil durum durumlarında sizinle iletişim kurmak amacıyla kullanılır. Symi, kullanıcıların kimlik bilgilerini veya rehber/alıcı verilerini hiçbir koşulda, hiçbir reklam şirketiyle, veri analiz firmasıyla veya ticari ortakla paylaşmaz, kiralamaz ve satmaz.</p>
+                </div>
+
+                <div class="privacy-section-block">
+                    <h3 data-i18n="modal_sec4_title">4. Bilgi Paylaşımı ve Üçüncü Kurumlarla Paylaşım Politikası</h3>
+                    <p data-i18n="modal_sec4_text">Vela, kullanıcıların oluşturduğu verileri tamamen gizli tutar. Yasal makamlardan ve adli mercilerden resmi kanallar aracılığıyla gelen bilgi taleplerinde, sistemimizde yalnızca şifrelenmiş ham veriler (ciphertext) paylaşılabilir. Verilerin şifresini çözme anahtarı yalnızca kullanıcının kendisinde bulunduğundan, Symi'nin bu şifreli içerikleri çözüp resmi kurumlara açık metin olarak teslim etmesi teknik olarak imkansızdır. Bu durum veri gizliliğinizin en büyük yasal teminatıdır.</p>
+                </div>
+
+                <div class="privacy-section-block">
+                    <h3 data-i18n="modal_sec5_title">5. Verilerin Saklanması ve Barındırma Altyapısı</h3>
+                    <p data-i18n="modal_sec5_text">Şifrelenmiş kapsülleriniz ve alıcı bilgileriniz, uluslararası güvenlik standartlarına (ISO/IEC 27001, SOC 2) ve KVKK / GDPR mevzuatlarına tam uyumlu yüksek güvenlikli veri merkezlerinde saklanır. Aktif check-in durumunuz devam ettiği sürece verileriniz koruma altındadır. Kendi isteğinizle sildiğiniz kapsüller veya hesap silme işlemi gerçekleştirilen veriler anında ve geri döndürülemeyecek şekilde veritabanlarından temizlenir.</p>
+                </div>
+
+                <div class="privacy-section-block">
+                    <h3 data-i18n="modal_sec6_title">6. Tek Seferlik Ömür Boyu Lisans ve İade Koşulları</h3>
+                    <p data-i18n="modal_sec6_text">Vela ücretli üyelik paketleri "Ömür Boyu Lisans" modelindedir. Satın alınan paketler için aylık veya yıllık yenileme ücreti yoktur. Hesap silme veya üyelikten vazgeçme durumlarında, kullanılmış veya kullanılmamış lisanslar için geriye dönük herhangi bir ücret iadesi veya kısmi iade politikamız bulunmamaktadır.</p>
+                </div>
+
+                <div class="privacy-section-block">
+                    <h3 data-i18n="modal_sec7_title">7. Hesap Silme Öncesi Kapsülleri Temizleme Zorunluluğu</h3>
+                    <p data-i18n="modal_sec7_text">Kullanıcı hesabını silmeye karar verdiğinde, "Sıfır-Bilgi" gizlilik yapımız gereği sunucudaki mesaj içeriklerine doğrudan erişip silemeyeceğimiz için, kullanıcının öncelikle uygulama içerisindeki şifreli tüm kapsüllerini kendisinin silmesi gerekmektedir. Kapsülleri silinmeden talep edilen hesap kapatma durumlarında şifreli veriler askıda kalabilir. Bu sorumluluk tamamen kullanıcıya aittir.</p>
+                </div>
+
+                <div class="privacy-section-block">
+                    <h3 data-i18n="modal_sec8_title">8. Yürürlük ve Değişiklikler</h3>
+                    <p data-i18n="modal_sec8_text">Symi, operasyonel ihtiyaçlar ve altyapı maliyetlerinin değişmesi durumunda, gelecekte gizlilik politikasında veya ücretsiz üyeliklerdeki reklamsızlık taahhüdünde güncelleme yapma hakkını saklı tutar. Uygulamaya kayıt olmuş her üye, bu sözleşmeyi peşinen kabul etmiş sayılır.</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="submit-btn" id="privacy-modal-agree" data-i18n="modal_btn_agree">Okudum, Kabul Ediyorum</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JS Scripts -->
+    <script src="translations.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

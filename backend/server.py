@@ -1,10 +1,16 @@
 from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, Request, Header
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
+import sys
+import time
 import logging
+import asyncio
+import traceback
 import uuid
 import httpx
 import random
@@ -36,6 +42,136 @@ EMERGENT_AUTH_URL = "https://demobackend.emergentagent.com/auth/v1/env/oauth/ses
 # Create the main app
 app = FastAPI(title="Final Message API")
 api_router = APIRouter(prefix="/api")
+
+# ---------------------------------------------------------
+# LOGGING SETUP (Winston & Morgan Style Dual-File Logging)
+# ---------------------------------------------------------
+LOGS_DIR = ROOT_DIR / "logs"
+LOGS_DIR.mkdir(parents=True, exist_ok=True)
+
+access_log_file = LOGS_DIR / "access.log"
+error_log_file = LOGS_DIR / "error.log"
+
+# Access Logger (Morgan style HTTP Request Logger)
+access_logger = logging.getLogger("access_logger")
+access_logger.setLevel(logging.INFO)
+access_logger.propagate = False
+
+if not access_logger.handlers:
+    access_file_handler = logging.FileHandler(access_log_file, encoding="utf-8")
+    access_file_formatter = logging.Formatter("[%(asctime)s] %(message)s")
+    access_file_handler.setFormatter(access_file_formatter)
+    access_logger.addHandler(access_file_handler)
+    
+    access_console_handler = logging.StreamHandler(sys.stdout)
+    access_console_handler.setFormatter(access_file_formatter)
+    access_logger.addHandler(access_console_handler)
+
+# Error Logger (Winston style Exception & Error Logger)
+error_logger = logging.getLogger("error_logger")
+error_logger.setLevel(logging.WARNING)
+error_logger.propagate = False
+
+if not error_logger.handlers:
+    error_file_handler = logging.FileHandler(error_log_file, encoding="utf-8")
+    error_file_formatter = logging.Formatter("[%(asctime)s] [%(levelname)s] %(message)s")
+    error_file_handler.setFormatter(error_file_formatter)
+    error_logger.addHandler(error_file_handler)
+    
+    error_console_handler = logging.StreamHandler(sys.stderr)
+    error_console_handler.setFormatter(error_file_formatter)
+    error_logger.addHandler(error_console_handler)
+
+
+# ---------------------------------------------------------
+# REQUEST LOGGER MIDDLEWARE (Morgan Style)
+# ---------------------------------------------------------
+@app.middleware("http")
+async def morgan_request_logger(request: Request, call_next):
+    start_time = time.time()
+    
+    forwarded_for = request.headers.get("x-forwarded-for")
+    if forwarded_for:
+        client_ip = forwarded_for.split(",")[0].strip()
+    else:
+        client_ip = request.client.host if request.client else "unknown"
+    
+    method = request.method
+    url_path = request.url.path
+    
+    user_info = "Anonymous"
+    auth_header = request.headers.get("authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        token = auth_header.replace("Bearer ", "").strip()
+        try:
+            payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM], options={"verify_signature": False})
+            user_info = payload.get("sub") or "User"
+        except Exception:
+            user_info = "TokenUser"
+            
+    response = await call_next(request)
+    
+    process_time = (time.time() - start_time) * 1000
+    status_code = response.status_code
+    
+    log_msg = f"IP: {client_ip} | Method: {method} | Path: {url_path} | Status: {status_code} | Duration: {process_time:.2f}ms | User: {user_info}"
+    access_logger.info(log_msg)
+    
+    return response
+
+
+# ---------------------------------------------------------
+# ERROR LOGGER EXCEPTION HANDLERS (Winston Style)
+# ---------------------------------------------------------
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    errors = exc.errors()
+    body_str = ""
+    try:
+        body = await request.body()
+        body_str = body.decode("utf-8") if body else ""
+    except Exception:
+        body_str = "Could not read body"
+
+    error_msg = (
+        f"[VALIDATION ERROR 422] Path: {request.url.path} | Method: {request.method} | "
+        f"Validation Details: {errors} | Payload: {body_str}"
+    )
+    error_logger.warning(error_msg)
+    
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content={"detail": errors, "message": "Validation Error", "error": str(errors)}
+    )
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    level = logging.ERROR if exc.status_code >= 500 else logging.WARNING
+    error_msg = (
+        f"[HTTP {exc.status_code}] Path: {request.url.path} | Method: {request.method} | "
+        f"Detail: {exc.detail}"
+    )
+    error_logger.log(level, error_msg)
+    
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail, "message": exc.detail, "error": str(exc.detail)},
+        headers=getattr(exc, "headers", None)
+    )
+
+@app.exception_handler(Exception)
+async def generic_exception_handler(request: Request, exc: Exception):
+    tb = traceback.format_exc()
+    error_msg = (
+        f"[500 INTERNAL SERVER ERROR] Path: {request.url.path} | Method: {request.method} | "
+        f"Exception: {str(exc)}\nStack Trace:\n{tb}"
+    )
+    error_logger.error(error_msg)
+    
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Sunucu içi beklenmeyen bir hata oluştu", "message": "Internal Server Error", "error": str(exc)}
+    )
 
 # Helper Functions
 def verify_password(plain_password, hashed_password):
@@ -145,6 +281,12 @@ class MessageCreate(BaseModel):
     message_type: Literal["text", "audio", "video"]
     content: str  # For text or base64 encoded audio/video
     encryption_password: str
+    delivery_mode: Optional[Literal["checkin_based", "scheduled_date"]] = "checkin_based"
+    scheduled_at: Optional[datetime] = None
+    delivery_channel: Optional[Literal["email", "sms", "both"]] = "both"
+
+class AvatarUpdate(BaseModel):
+    picture: str
 
 class RecipientCreate(BaseModel):
     name: str
@@ -333,74 +475,84 @@ async def health_check():
 
 # Auth Routes
 @api_router.post("/auth/register", response_model=TokenResponse)
+@api_router.post("/register", response_model=TokenResponse)
 async def register(user_data: UserRegister):
-    # Check if user exists
-    existing_email = await db.users.find_one({"email": user_data.email})
-    if existing_email:
-        raise HTTPException(status_code=400, detail="Bu e-posta adresi ile kayıtlı bir kullanıcı zaten var. Lütfen farklı bir e-posta adresi girin.")
-    
-    existing_phone = await db.users.find_one({"phone": user_data.phone})
-    if existing_phone:
-        raise HTTPException(status_code=400, detail="Bu telefon numarası ile kayıtlı bir kullanıcı zaten var. Lütfen farklı bir telefon numarası girin.")
-    
-    # Generate unique referral code
-    while True:
-        ref_code = generate_referral_code()
-        dup = await db.users.find_one({"referral_code": ref_code})
-        if not dup:
-            break
+    try:
+        # Check if user exists
+        existing_email = await db.users.find_one({"email": user_data.email})
+        if existing_email:
+            error_logger.warning(f"[REGISTRATION FAILURE 400] Email already registered: {user_data.email}")
+            raise HTTPException(status_code=400, detail="Bu e-posta adresi ile kayıtlı bir kullanıcı zaten var. Lütfen farklı bir e-posta adresi girin.")
+        
+        existing_phone = await db.users.find_one({"phone": user_data.phone})
+        if existing_phone:
+            error_logger.warning(f"[REGISTRATION FAILURE 400] Phone already registered: {user_data.phone}")
+            raise HTTPException(status_code=400, detail="Bu telefon numarası ile kayıtlı bir kullanıcı zaten var. Lütfen farklı bir telefon numarası girin.")
+        
+        # Generate unique referral code
+        while True:
+            ref_code = generate_referral_code()
+            dup = await db.users.find_one({"referral_code": ref_code})
+            if not dup:
+                break
 
-    # Create user
-    hashed_password = get_password_hash(user_data.password)
-    user_dict = {
-        "user_id": f"user_{uuid.uuid4().hex[:12]}",
-        "email": user_data.email,
-        "password_hash": hashed_password,
-        "full_name": user_data.full_name,
-        "phone": user_data.phone,
-        "role": "user",
-        "auth_provider": "email",
-        "subscription_tier": "free",
-        "subscription_status": "active",
-        "subscription_expiry": None,
-        "last_checkin": datetime.utcnow(),
-        "consecutive_missed_days": 0,
-        "status": "active",
-        "created_at": datetime.utcnow(),
-        "updated_at": datetime.utcnow(),
-        "symi_points": 0,
-        "referral_code": ref_code,
-        "referrals": [],
-        "referred_by": None,
-        "referral_eligible": False,
-        "extra_recipients": 0,
-        "last_password_change": datetime.utcnow()
-    }
-    
-    result = await db.users.insert_one(user_dict)
-    user_dict["_id"] = str(result.inserted_id)
-    
-    # Process referral if provided
-    if user_data.referral_code:
-        await process_referral(user_dict["user_id"], user_data.referral_code)
-        # Fetch updated user object
-        updated_user = await db.users.find_one({"user_id": user_dict["user_id"]})
-        if updated_user:
-            user_dict = updated_user
-            user_dict["_id"] = str(user_dict["_id"])
+        # Create user
+        hashed_password = get_password_hash(user_data.password)
+        user_dict = {
+            "user_id": f"user_{uuid.uuid4().hex[:12]}",
+            "email": user_data.email,
+            "password_hash": hashed_password,
+            "full_name": user_data.full_name,
+            "phone": user_data.phone,
+            "role": "user",
+            "auth_provider": "email",
+            "subscription_tier": "free",
+            "subscription_status": "active",
+            "subscription_expiry": None,
+            "last_checkin": datetime.utcnow(),
+            "consecutive_missed_days": 0,
+            "status": "active",
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow(),
+            "symi_points": 0,
+            "referral_code": ref_code,
+            "referrals": [],
+            "referred_by": None,
+            "referral_eligible": False,
+            "extra_recipients": 0,
+            "last_password_change": datetime.utcnow()
+        }
+        
+        result = await db.users.insert_one(user_dict)
+        user_dict["_id"] = str(result.inserted_id)
+        
+        # Process referral if provided
+        if user_data.referral_code:
+            await process_referral(user_dict["user_id"], user_data.referral_code)
+            # Fetch updated user object
+            updated_user = await db.users.find_one({"user_id": user_dict["user_id"]})
+            if updated_user:
+                user_dict = updated_user
+                user_dict["_id"] = str(user_dict["_id"])
 
-    # Create token
-    access_token = create_access_token(data={"sub": user_data.email})
-    
-    # Remove password hash from response
-    if "password_hash" in user_dict:
-        del user_dict["password_hash"]
-    
-    return {
-        "access_token": access_token,
-        "token_type": "bearer",
-        "user": user_dict
-    }
+        # Create token
+        access_token = create_access_token(data={"sub": user_data.email})
+        
+        # Remove password hash from response
+        if "password_hash" in user_dict:
+            del user_dict["password_hash"]
+        
+        return {
+            "access_token": access_token,
+            "token_type": "bearer",
+            "user": user_dict
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        tb = traceback.format_exc()
+        error_logger.error(f"[REGISTRATION EXCEPTION 500] Email: {user_data.email} | Error: {str(e)}\n{tb}")
+        raise HTTPException(status_code=500, detail=f"Kayıt işlemi sırasında bir hata oluştu: {str(e)}")
 
 @api_router.post("/auth/google/session")
 async def google_session(request: Request):
@@ -703,6 +855,61 @@ async def get_current_user_info(current_user: dict = Depends(get_current_user)):
     ]
     return user_response
 
+@api_router.put("/users/me")
+@api_router.patch("/users/me")
+@app.put("/api/users/me")
+@app.patch("/api/users/me")
+async def update_user_profile(payload: dict, current_user: dict = Depends(get_current_user)):
+    update_data = {}
+    if "picture" in payload:
+        update_data["picture"] = payload["picture"]
+    if "full_name" in payload:
+        update_data["full_name"] = payload["full_name"]
+    update_data["updated_at"] = datetime.utcnow()
+
+    await db.users.update_one({"_id": current_user["_id"]}, {"$set": update_data})
+    updated_user = await db.users.find_one({"_id": current_user["_id"]})
+    if updated_user:
+        updated_user["_id"] = str(updated_user["_id"])
+        if "password_hash" in updated_user:
+            del updated_user["password_hash"]
+        return updated_user
+    return current_user
+
+@api_router.post("/users/avatar")
+@api_router.post("/users/me/avatar")
+@app.post("/api/users/avatar")
+@app.post("/users/avatar")
+async def upload_avatar(avatar_data: AvatarUpdate, current_user: dict = Depends(get_current_user)):
+    await db.users.update_one(
+        {"_id": current_user["_id"]},
+        {"$set": {"picture": avatar_data.picture, "updated_at": datetime.utcnow()}}
+    )
+    updated_user = await db.users.find_one({"_id": current_user["_id"]})
+    if updated_user:
+        updated_user["_id"] = str(updated_user["_id"])
+        if "password_hash" in updated_user:
+            del updated_user["password_hash"]
+        return updated_user
+    raise HTTPException(status_code=400, detail="Avatar güncellenemedi")
+
+@api_router.delete("/users/avatar")
+@api_router.delete("/users/me/avatar")
+@app.delete("/api/users/avatar")
+@app.delete("/users/avatar")
+async def delete_avatar(current_user: dict = Depends(get_current_user)):
+    await db.users.update_one(
+        {"_id": current_user["_id"]},
+        {"$unset": {"picture": ""}, "$set": {"updated_at": datetime.utcnow()}}
+    )
+    updated_user = await db.users.find_one({"_id": current_user["_id"]})
+    if updated_user:
+        updated_user["_id"] = str(updated_user["_id"])
+        if "password_hash" in updated_user:
+            del updated_user["password_hash"]
+        return updated_user
+    raise HTTPException(status_code=400, detail="Avatar silinemedi")
+
 @api_router.post("/users/checkin", response_model=CheckInResponse)
 async def check_in(current_user: dict = Depends(get_current_user)):
     now = datetime.utcnow()
@@ -793,11 +1000,25 @@ async def create_message(message_data: MessageCreate, current_user: dict = Depen
     if message_data.message_type not in limits["allowed_types"]:
         raise HTTPException(status_code=403, detail=f"Message type '{message_data.message_type}' not allowed in {user_tier} plan")
     
+    # Scheduled date validation
+    scheduled_dt = message_data.scheduled_at
+    if message_data.delivery_mode == "scheduled_date":
+        if not scheduled_dt:
+            raise HTTPException(status_code=400, detail="Belirtilen tarihte iletim için bir tarih ve saat seçilmelidir.")
+        if scheduled_dt.tzinfo is not None:
+            scheduled_dt = scheduled_dt.astimezone(timezone.utc).replace(tzinfo=None)
+        if scheduled_dt <= datetime.utcnow():
+            raise HTTPException(status_code=400, detail="İletim tarihi gelecekteki bir tarih ve saat olmalıdır.")
+
     # Create encrypted message
     message_dict = {
       "user_id": str(current_user["_id"]),
       "recipient_id": message_data.recipient_id,
       "message_type": message_data.message_type,
+      "delivery_mode": message_data.delivery_mode or "checkin_based",
+      "scheduled_at": scheduled_dt if message_data.delivery_mode == "scheduled_date" else None,
+      "delivery_channel": message_data.delivery_channel or "both",
+      "status": "pending",
       "encrypted_content": message_data.content,  # Should be encrypted client-side
       "encryption_password": get_password_hash(message_data.encryption_password),  # Bcrypt hashed password
       "created_at": datetime.utcnow(),
@@ -808,6 +1029,10 @@ async def create_message(message_data: MessageCreate, current_user: dict = Depen
     
     result = await db.messages.insert_one(message_dict)
     message_dict["_id"] = str(result.inserted_id)
+    if isinstance(message_dict.get("created_at"), datetime):
+        message_dict["created_at"] = message_dict["created_at"].isoformat()
+    if isinstance(message_dict.get("scheduled_at"), datetime):
+        message_dict["scheduled_at"] = message_dict["scheduled_at"].isoformat()
     
     # Award points based on message type
     points_to_award = 10
@@ -829,10 +1054,26 @@ async def get_messages(current_user: dict = Depends(get_current_user)):
     
     for msg in messages:
         msg["_id"] = str(msg["_id"])
+        if isinstance(msg.get("created_at"), datetime):
+            msg["created_at"] = msg["created_at"].isoformat()
+        if isinstance(msg.get("scheduled_at"), datetime):
+            msg["scheduled_at"] = msg["scheduled_at"].isoformat()
+        if isinstance(msg.get("delivered_at"), datetime):
+            msg["delivered_at"] = msg["delivered_at"].isoformat()
+        if "delivery_mode" not in msg:
+            msg["delivery_mode"] = "checkin_based"
+        if "status" not in msg:
+            msg["status"] = "delivered" if msg.get("is_delivered") else "pending"
+            
         # Get recipient info
-        recipient = await db.recipients.find_one({"_id": ObjectId(msg["recipient_id"])})
-        if recipient:
-            msg["recipient_name"] = recipient.get("name", "Unknown")
+        if msg.get("recipient_id") and ObjectId.is_valid(msg["recipient_id"]):
+            recipient = await db.recipients.find_one({"_id": ObjectId(msg["recipient_id"])})
+            if recipient:
+                msg["recipient_name"] = recipient.get("name", "Unknown")
+            else:
+                msg["recipient_name"] = "Bilinmeyen Alıcı"
+        else:
+            msg["recipient_name"] = "Bilinmeyen Alıcı"
     
     return messages
 
@@ -2114,6 +2355,55 @@ async def startup_db_indexes():
             logger.info(f"Backfilled user {user.get('email')} with referral code: {ref_code}")
     except Exception as e:
         logger.warning(f"Startup task failed or index creation warning: {e}")
+
+async def process_scheduled_messages_loop():
+    """Background worker checking for scheduled date messages due for delivery."""
+    while True:
+        try:
+            now = datetime.utcnow()
+            pending_msgs = await db.messages.find({
+                "delivery_mode": "scheduled_date",
+                "is_delivered": False,
+                "scheduled_at": {"$lte": now}
+            }).to_list(100)
+            
+            for msg in pending_msgs:
+                msg_id = str(msg["_id"])
+                recipient_id = msg.get("recipient_id")
+                
+                recipient = None
+                if recipient_id and ObjectId.is_valid(recipient_id):
+                    recipient = await db.recipients.find_one({"_id": ObjectId(recipient_id)})
+                    
+                recip_name = recipient.get("name", "Unknown") if recipient else "Unknown"
+                recip_email = recipient.get("email", "") if recipient else ""
+                recip_phone = recipient.get("phone", "") if recipient else ""
+                channel = msg.get("delivery_channel", "both")
+                
+                await db.messages.update_one(
+                    {"_id": msg["_id"]},
+                    {
+                        "$set": {
+                            "is_delivered": True,
+                            "delivered_at": now,
+                            "status": "delivered",
+                            "updated_at": now
+                        }
+                    }
+                )
+                access_logger.info(
+                    f"[SCHEDULED DELIVERY SUCCESS] MsgID: {msg_id} | Recipient: {recip_name} ({recip_email}/{recip_phone}) | Channel: {channel}"
+                )
+        except Exception as e:
+            tb = traceback.format_exc()
+            error_logger.error(f"[SCHEDULED WORKER EXCEPTION] {str(e)}\n{tb}")
+        
+        await asyncio.sleep(60)
+
+# Launch scheduled messages worker on startup
+@app.on_event("startup")
+async def start_scheduled_messages_worker():
+    asyncio.create_task(process_scheduled_messages_loop())
 
 @app.on_event("shutdown")
 async def shutdown_db_client():

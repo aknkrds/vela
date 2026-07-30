@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -13,9 +13,10 @@ import {
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useAuth } from '@/src/contexts/AuthContext';
+import { useAuth, extractErrorMessage } from '@/src/contexts/AuthContext';
 import { useSettings } from '@/src/contexts/SettingsContext';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from 'expo-router';
 import api from '@/src/api/client';
 import { encryptMessage, hashPassword } from '@/src/utils/encryption';
 import { COMFORT_BUTTON_HEIGHT, COMFORT_ICON_SIZE } from '@/src/utils/theme';
@@ -26,6 +27,10 @@ interface Message {
   recipient_name: string;
   created_at: string;
   is_delivered: boolean;
+  delivery_mode?: 'checkin_based' | 'scheduled_date';
+  scheduled_at?: string;
+  delivery_channel?: string;
+  status?: string;
 }
 
 interface Recipient {
@@ -53,10 +58,63 @@ export default function Messages() {
   const [messageType, setMessageType] = useState<'text' | 'audio' | 'video'>('text');
   const [messageContent, setMessageContent] = useState('');
   const [encryptionPassword, setEncryptionPassword] = useState('');
+  const [deliveryMode, setDeliveryMode] = useState<'checkin_based' | 'scheduled_date'>('checkin_based');
+  const [scheduledDate, setScheduledDate] = useState('');
+  const [scheduledTime, setScheduledTime] = useState('');
+  const [deliveryChannel, setDeliveryChannel] = useState<'both' | 'email' | 'sms'>('both');
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  // Date & Time Picker Modal state
+  const [showDatePickerModal, setShowDatePickerModal] = useState(false);
+  const [showTimePickerModal, setShowTimePickerModal] = useState(false);
+
+  const currentYear = new Date().getFullYear();
+  const yearsList = Array.from({ length: 20 }, (_, i) => currentYear + i);
+  const monthsList = [
+    { num: 1, name: 'Ocak' },
+    { num: 2, name: 'Şubat' },
+    { num: 3, name: 'Mart' },
+    { num: 4, name: 'Nisan' },
+    { num: 5, name: 'Mayıs' },
+    { num: 6, name: 'Haziran' },
+    { num: 7, name: 'Temmuz' },
+    { num: 8, name: 'Ağustos' },
+    { num: 9, name: 'Eylül' },
+    { num: 10, name: 'Ekim' },
+    { num: 11, name: 'Kasım' },
+    { num: 12, name: 'Aralık' },
+  ];
+
+  const [selectedYear, setSelectedYear] = useState<number>(currentYear);
+  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
+  const [selectedDay, setSelectedDay] = useState<number>(new Date().getDate());
+
+  const hoursList = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
+  const minutesList = ['00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55'];
+
+  const [selectedHour, setSelectedHour] = useState<string>('12');
+  const [selectedMinute, setSelectedMinute] = useState<string>('00');
+
+  const getDaysInMonth = (year: number, month: number) => {
+    return new Date(year, month, 0).getDate();
+  };
+
+  const confirmDatePicker = () => {
+    const monthStr = String(selectedMonth).padStart(2, '0');
+    const dayStr = String(selectedDay).padStart(2, '0');
+    setScheduledDate(`${selectedYear}-${monthStr}-${dayStr}`);
+    setShowDatePickerModal(false);
+  };
+
+  const confirmTimePicker = () => {
+    setScheduledTime(`${selectedHour}:${selectedMinute}`);
+    setShowTimePickerModal(false);
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [])
+  );
 
   const loadData = async () => {
     try {
@@ -67,7 +125,7 @@ export default function Messages() {
       setMessages(messagesRes.data);
       setRecipients(recipientsRes.data);
     } catch (error: any) {
-      Alert.alert(t('error'), error.response?.data?.detail || t('error'));
+      console.error('Error loading messages data:', error);
     } finally {
       setLoading(false);
     }
@@ -88,6 +146,24 @@ export default function Messages() {
     return typesByTier[tier] || ['text'];
   };
 
+  const handleOpenAddModal = async () => {
+    try {
+      const recipientsRes = await api.get('/recipients');
+      setRecipients(recipientsRes.data);
+      if (!recipientsRes.data || recipientsRes.data.length === 0) {
+        Alert.alert(t('error'), t('addRecipient'));
+        return;
+      }
+      setShowModal(true);
+    } catch (e) {
+      if (recipients.length === 0) {
+        Alert.alert(t('error'), t('addRecipient'));
+        return;
+      }
+      setShowModal(true);
+    }
+  };
+
   const handleCreateMessage = async () => {
     if (!selectedRecipient) {
       Alert.alert(t('error'), t('selectRecipientError'));
@@ -102,6 +178,21 @@ export default function Messages() {
       return;
     }
 
+    let scheduledAtIso: string | undefined = undefined;
+    if (deliveryMode === 'scheduled_date') {
+      if (!scheduledDate || !scheduledTime) {
+        Alert.alert(t('error'), t('selectDateError'));
+        return;
+      }
+      const combinedStr = `${scheduledDate.trim()}T${scheduledTime.trim()}:00`;
+      const dateObj = new Date(combinedStr);
+      if (isNaN(dateObj.getTime()) || dateObj <= new Date()) {
+        Alert.alert(t('error'), t('selectDateError'));
+        return;
+      }
+      scheduledAtIso = dateObj.toISOString();
+    }
+
     setModalLoading(true);
     try {
       // Client-side encryption: encrypt the message before sending
@@ -109,19 +200,27 @@ export default function Messages() {
       // Hash the password — backend will never see the raw password
       const passwordHash = hashPassword(encryptionPassword);
 
-      await api.post('/messages', {
+      const payload: any = {
         recipient_id: selectedRecipient,
         message_type: messageType,
         content: encryptedContent,
         encryption_password: passwordHash,
-      });
+        delivery_mode: deliveryMode,
+        delivery_channel: deliveryChannel,
+      };
+      if (deliveryMode === 'scheduled_date' && scheduledAtIso) {
+        payload.scheduled_at = scheduledAtIso;
+      }
+
+      await api.post('/messages', payload);
       
       Alert.alert(t('success'), t('createMessageSuccess'));
       setShowModal(false);
       resetForm();
       loadData();
     } catch (error: any) {
-      Alert.alert(t('error'), error.response?.data?.detail || t('createMessageFailed'));
+      const errorMsg = extractErrorMessage(error);
+      Alert.alert(t('error'), errorMsg || t('createMessageFailed'));
     } finally {
       setModalLoading(false);
     }
@@ -155,6 +254,10 @@ export default function Messages() {
     setMessageType('text');
     setMessageContent('');
     setEncryptionPassword('');
+    setDeliveryMode('checkin_based');
+    setScheduledDate('');
+    setScheduledTime('');
+    setDeliveryChannel('both');
   };
 
   const getMessageIcon = (type: string) => {
@@ -182,13 +285,7 @@ export default function Messages() {
         <Text style={[styles.headerTitle, { fontSize: 28 * fontSizeScale, color: colors.textPrimary }]}>{t('messagesTitle')}</Text>
         <TouchableOpacity
           style={[styles.addButton, { backgroundColor: colors.accent, width: comfortMode ? 52 : 44, height: comfortMode ? 52 : 44, borderRadius: comfortMode ? 26 : 22 }]}
-          onPress={() => {
-            if (recipients.length === 0) {
-              Alert.alert(t('error'), t('addRecipient'));
-              return;
-            }
-            setShowModal(true);
-          }}
+          onPress={handleOpenAddModal}
         >
           <Ionicons name="add" size={comfortMode ? 28 : 24} color="#fff" />
         </TouchableOpacity>
@@ -225,15 +322,20 @@ export default function Messages() {
                   <Ionicons name="trash-outline" size={iconSize} color={colors.danger} />
                 </TouchableOpacity>
               </View>
+
               <View style={styles.messageFooter}>
                 <View style={styles.statusBadge}>
                   <Ionicons
-                    name={message.is_delivered ? 'checkmark-circle' : 'lock-closed'}
+                    name={message.is_delivered ? 'checkmark-circle' : (message.delivery_mode === 'scheduled_date' ? 'time-outline' : 'lock-closed')}
                     size={comfortMode ? 20 : 16}
-                    color={message.is_delivered ? colors.success : colors.textMuted}
+                    color={message.is_delivered ? colors.success : (message.delivery_mode === 'scheduled_date' ? '#f59e0b' : colors.textMuted)}
                   />
-                  <Text style={[styles.statusText, { fontSize: 14 * fontSizeScale, color: colors.textSecondary }]}>
-                    {message.is_delivered ? 'Delivered' : t('messageEncrypted')}
+                  <Text style={[styles.statusText, { fontSize: 13 * fontSizeScale, color: colors.textSecondary }]}>
+                    {message.is_delivered
+                      ? t('deliveredStatus')
+                      : (message.delivery_mode === 'scheduled_date'
+                          ? `📅 ${t('scheduledBadge')} ${message.scheduled_at ? new Date(message.scheduled_at).toLocaleDateString() + ' ' + new Date(message.scheduled_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}`
+                          : `❤️ ${t('legacyBadge')}`)}
                   </Text>
                 </View>
                 <Text style={[styles.dateText, { fontSize: 12 * fontSizeScale, color: colors.textMuted }]}>
@@ -272,6 +374,214 @@ export default function Messages() {
                   {t('encryptionInfo')}
                 </Text>
               </View>
+
+              {/* Delivery Mode Toggle */}
+              <Text style={[styles.label, { fontSize: 16 * fontSizeScale, color: colors.textPrimary }]}>{t('deliveryModeLabel')}</Text>
+              <View style={styles.deliveryModeContainer}>
+                <TouchableOpacity
+                  style={[
+                    styles.deliveryModeButton,
+                    { backgroundColor: colors.surface, borderColor: colors.border },
+                    deliveryMode === 'checkin_based' && { backgroundColor: colors.accent, borderColor: colors.accent },
+                  ]}
+                  onPress={() => setDeliveryMode('checkin_based')}
+                >
+                  <Ionicons name="heart" size={18} color={deliveryMode === 'checkin_based' ? '#fff' : colors.textMuted} />
+                  <Text style={[styles.modeText, { fontSize: 13 * fontSizeScale, color: deliveryMode === 'checkin_based' ? '#fff' : colors.textMuted }]}>
+                    {t('checkinBasedMode')}
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.deliveryModeButton,
+                    { backgroundColor: colors.surface, borderColor: colors.border },
+                    deliveryMode === 'scheduled_date' && { backgroundColor: colors.accent, borderColor: colors.accent },
+                  ]}
+                  onPress={() => setDeliveryMode('scheduled_date')}
+                >
+                  <Ionicons name="calendar" size={18} color={deliveryMode === 'scheduled_date' ? '#fff' : colors.textMuted} />
+                  <Text style={[styles.modeText, { fontSize: 13 * fontSizeScale, color: deliveryMode === 'scheduled_date' ? '#fff' : colors.textMuted }]}>
+                    {t('scheduledDateMode')}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Date & Time Input (When scheduled_date is selected) */}
+              {deliveryMode === 'scheduled_date' && (
+                <View style={styles.scheduledContainer}>
+                  <Text style={[styles.label, { fontSize: 15 * fontSizeScale, color: colors.textPrimary }]}>{t('scheduledAtLabel')}</Text>
+                  <View style={styles.dateTimeRow}>
+                    <TouchableOpacity
+                      style={[
+                        styles.pickerTrigger,
+                        { flex: 1, backgroundColor: colors.inputBg, borderColor: colors.inputBorder, height: btnHeight },
+                        showDatePickerModal && { borderColor: colors.accent, borderWidth: 2 },
+                      ]}
+                      onPress={() => {
+                        setShowDatePickerModal(!showDatePickerModal);
+                        setShowTimePickerModal(false);
+                      }}
+                    >
+                      <Ionicons name="calendar" size={20} color={colors.accent} />
+                      <Text style={[styles.pickerTriggerText, { fontSize: 14 * fontSizeScale, color: scheduledDate ? colors.textPrimary : colors.inputPlaceholder }]}>
+                        {scheduledDate ? scheduledDate : 'Tarih Seçin (Yıl/Ay/Gün)'}
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={[
+                        styles.pickerTrigger,
+                        { width: 130, backgroundColor: colors.inputBg, borderColor: colors.inputBorder, height: btnHeight },
+                        showTimePickerModal && { borderColor: colors.accent, borderWidth: 2 },
+                      ]}
+                      onPress={() => {
+                        setShowTimePickerModal(!showTimePickerModal);
+                        setShowDatePickerModal(false);
+                      }}
+                    >
+                      <Ionicons name="time" size={20} color={colors.accent} />
+                      <Text style={[styles.pickerTriggerText, { fontSize: 14 * fontSizeScale, color: scheduledTime ? colors.textPrimary : colors.inputPlaceholder }]}>
+                        {scheduledTime ? scheduledTime : 'Saat (14:30)'}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  {/* Inline Date Picker Panel */}
+                  {showDatePickerModal && (
+                    <View style={[styles.inlinePickerBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                      {/* Year Selector */}
+                      <Text style={[styles.pickerStepLabel, { color: colors.accent }]}>1. YIL SEÇİN ({currentYear} ve sonrası)</Text>
+                      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
+                        {yearsList.map((y) => (
+                          <TouchableOpacity
+                            key={y}
+                            style={[
+                              styles.chipItem,
+                              { backgroundColor: colors.background, borderColor: colors.border },
+                              selectedYear === y && { backgroundColor: colors.accent, borderColor: colors.accent },
+                            ]}
+                            onPress={() => setSelectedYear(y)}
+                          >
+                            <Text style={[styles.chipText, { color: selectedYear === y ? '#fff' : colors.textPrimary }]}>{y}</Text>
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
+
+                      {/* Month Selector */}
+                      <Text style={[styles.pickerStepLabel, { color: colors.accent }]}>2. AY SEÇİN</Text>
+                      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
+                        {monthsList.map((m) => (
+                          <TouchableOpacity
+                            key={m.num}
+                            style={[
+                              styles.chipItem,
+                              { backgroundColor: colors.background, borderColor: colors.border },
+                              selectedMonth === m.num && { backgroundColor: colors.accent, borderColor: colors.accent },
+                            ]}
+                            onPress={() => setSelectedMonth(m.num)}
+                          >
+                            <Text style={[styles.chipText, { color: selectedMonth === m.num ? '#fff' : colors.textPrimary }]}>
+                              {m.num}. {m.name}
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
+
+                      {/* Day Selector */}
+                      <Text style={[styles.pickerStepLabel, { color: colors.accent }]}>3. GÜN SEÇİN</Text>
+                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
+                        {Array.from({ length: getDaysInMonth(selectedYear, selectedMonth) }, (_, i) => i + 1).map((d) => (
+                          <TouchableOpacity
+                            key={d}
+                            style={[
+                              styles.dayChip,
+                              { backgroundColor: colors.background, borderColor: colors.border },
+                              selectedDay === d && { backgroundColor: colors.accent, borderColor: colors.accent },
+                            ]}
+                            onPress={() => setSelectedDay(d)}
+                          >
+                            <Text style={[styles.chipText, { color: selectedDay === d ? '#fff' : colors.textPrimary }]}>{d}</Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+
+                      <TouchableOpacity style={[styles.pickerConfirmBtn, { backgroundColor: colors.accent }]} onPress={confirmDatePicker}>
+                        <Text style={styles.pickerConfirmBtnText}>Tarihi Seç: {selectedYear}-{String(selectedMonth).padStart(2, '0')}-{String(selectedDay).padStart(2, '0')}</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+
+                  {/* Inline Time Picker Panel */}
+                  {showTimePickerModal && (
+                    <View style={[styles.inlinePickerBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                      {/* Hour Selector */}
+                      <Text style={[styles.pickerStepLabel, { color: colors.accent }]}>SAAT SEÇİN</Text>
+                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
+                        {hoursList.map((h) => (
+                          <TouchableOpacity
+                            key={h}
+                            style={[
+                              styles.timeChip,
+                              { backgroundColor: colors.background, borderColor: colors.border },
+                              selectedHour === h && { backgroundColor: colors.accent, borderColor: colors.accent },
+                            ]}
+                            onPress={() => setSelectedHour(h)}
+                          >
+                            <Text style={[styles.chipText, { color: selectedHour === h ? '#fff' : colors.textPrimary }]}>{h}:00</Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+
+                      {/* Minute Selector */}
+                      <Text style={[styles.pickerStepLabel, { color: colors.accent }]}>DAKİKA SEÇİN</Text>
+                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
+                        {minutesList.map((m) => (
+                          <TouchableOpacity
+                            key={m}
+                            style={[
+                              styles.timeChip,
+                              { backgroundColor: colors.background, borderColor: colors.border },
+                              selectedMinute === m && { backgroundColor: colors.accent, borderColor: colors.accent },
+                            ]}
+                            onPress={() => setSelectedMinute(m)}
+                          >
+                            <Text style={[styles.chipText, { color: selectedMinute === m ? '#fff' : colors.textPrimary }]}>:{m}</Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+
+                      <TouchableOpacity style={[styles.pickerConfirmBtn, { backgroundColor: colors.accent }]} onPress={confirmTimePicker}>
+                        <Text style={styles.pickerConfirmBtnText}>Saati Seç: {selectedHour}:{selectedMinute}</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+
+                  {/* Channel Selector */}
+                  <Text style={[styles.label, { fontSize: 15 * fontSizeScale, color: colors.textPrimary }]}>{t('deliveryChannelLabel')}</Text>
+                  <View style={styles.channelRow}>
+                    {[
+                      { key: 'both', label: t('bothChannel') },
+                      { key: 'email', label: t('emailChannel') },
+                      { key: 'sms', label: t('smsChannel') },
+                    ].map((ch) => (
+                      <TouchableOpacity
+                        key={ch.key}
+                        style={[
+                          styles.channelChip,
+                          { backgroundColor: colors.surface, borderColor: colors.border },
+                          deliveryChannel === ch.key && { backgroundColor: colors.accent, borderColor: colors.accent },
+                        ]}
+                        onPress={() => setDeliveryChannel(ch.key as any)}
+                      >
+                        <Text style={[styles.channelChipText, { fontSize: 12 * fontSizeScale, color: deliveryChannel === ch.key ? '#fff' : colors.textSecondary }]}>
+                          {ch.label}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+              )}
 
               {/* Recipient Selection */}
               <Text style={[styles.label, { fontSize: 16 * fontSizeScale, color: colors.textPrimary }]}>{t('recipientLabel')}</Text>
@@ -581,5 +891,124 @@ const styles = StyleSheet.create({
   createButtonText: {
     color: '#fff',
     fontWeight: '600',
+  },
+  deliveryModeContainer: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 8,
+  },
+  deliveryModeButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 2,
+    gap: 6,
+  },
+  modeText: {
+    fontWeight: '600',
+  },
+  scheduledContainer: {
+    marginBottom: 8,
+  },
+  dateTimeRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  inlinePickerBox: {
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 12,
+    marginTop: 10,
+    marginBottom: 10,
+  },
+  channelRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  channelChip: {
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderWidth: 1,
+  },
+  channelChipText: {
+    fontWeight: '600',
+  },
+  pickerTrigger: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    gap: 8,
+  },
+  pickerTriggerText: {
+    fontWeight: '500',
+  },
+  pickerModalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  pickerModalContent: {
+    width: '100%',
+    maxWidth: 420,
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+  pickerModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+  },
+  pickerModalTitle: {
+    fontWeight: 'bold',
+  },
+  pickerStepLabel: {
+    fontWeight: 'bold',
+    fontSize: 12,
+    marginBottom: 8,
+    letterSpacing: 0.5,
+  },
+  chipItem: {
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    marginRight: 8,
+    borderWidth: 1.5,
+  },
+  chipText: {
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  dayChip: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1.5,
+  },
+  timeChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1.5,
+  },
+  pickerConfirmBtn: {
+    padding: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pickerConfirmBtnText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
 });

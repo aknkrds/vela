@@ -1,10 +1,10 @@
 import axios from 'axios';
 import { storage } from '@/src/utils/storage';
 
-const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
+const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || 'https://app.velalife.tr';
 
 const api = axios.create({
-  baseURL: `${EXPO_PUBLIC_BACKEND_URL}/api`,
+  baseURL: `${EXPO_PUBLIC_BACKEND_URL.replace(/\/$/, '')}/api`,
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
