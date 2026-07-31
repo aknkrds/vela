@@ -159,5 +159,5 @@ export const COMFORT_BORDER_RADIUS = 16; // normal: 12
 import Constants from 'expo-constants';
 
 // App Version
-export const APP_VERSION = `v.${Constants.expoConfig?.version || '1.1.0'}`;
+export const APP_VERSION = `v.${Constants.expoConfig?.version || '1.1.1'}`;
 

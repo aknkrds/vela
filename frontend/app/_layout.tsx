@@ -3,6 +3,7 @@ import { AuthProvider } from '@/src/contexts/AuthContext';
 import { useEffect } from 'react';
 import * as SplashScreen from 'expo-splash-screen';
 import { Asset } from 'expo-asset';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { SettingsProvider } from '@/src/contexts/SettingsContext';
 import { PinLockOverlay } from '@/src/components/PinLockOverlay';
 
@@ -26,16 +27,18 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <SettingsProvider>
-      <AuthProvider>
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="index" />
-          <Stack.Screen name="(auth)/login" />
-          <Stack.Screen name="(auth)/register" />
-          <Stack.Screen name="(tabs)" />
-        </Stack>
-        <PinLockOverlay />
-      </AuthProvider>
-    </SettingsProvider>
+    <SafeAreaProvider>
+      <SettingsProvider>
+        <AuthProvider>
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="index" />
+            <Stack.Screen name="(auth)/login" />
+            <Stack.Screen name="(auth)/register" />
+            <Stack.Screen name="(tabs)" />
+          </Stack>
+          <PinLockOverlay />
+        </AuthProvider>
+      </SettingsProvider>
+    </SafeAreaProvider>
   );
 }

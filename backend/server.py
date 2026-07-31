@@ -469,7 +469,7 @@ async def health_check():
     """Health check endpoint to verify server is running and MongoDB is accessible."""
     try:
         await db.command("ping")
-        return {"status": "healthy", "database": "connected", "version": "1.1.0"}
+        return {"status": "healthy", "database": "connected", "version": "1.1.1"}
     except Exception as e:
         return {"status": "unhealthy", "database": "disconnected", "error": str(e)}
 

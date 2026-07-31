@@ -22,7 +22,7 @@ import { storage } from '@/src/utils/storage';
 import * as Clipboard from 'expo-clipboard';
 import * as Linking from 'expo-linking';
 import { Switch } from 'react-native';
-import { COMFORT_BUTTON_HEIGHT, COMFORT_ICON_SIZE } from '@/src/utils/theme';
+import { COMFORT_BUTTON_HEIGHT, COMFORT_ICON_SIZE, APP_VERSION } from '@/src/utils/theme';
 import { isRunningInExpoGo } from 'expo';
 
 // Helper to get notifications module dynamically
@@ -615,13 +615,13 @@ export default function Profile() {
 
             {/* App PIN Lock Row */}
             <View style={[styles.infoRow, { borderBottomColor: colors.border }]}>
-              <View style={styles.infoLabel}>
+              <View style={[styles.infoLabel, { flex: 1, marginRight: 8 }]}>
                 <Ionicons name="keypad" size={iconSize} color={colors.accent} />
-                <Text style={[styles.infoLabelText, { fontSize: 14 * fontSizeScale, color: colors.textSecondary }]}>
+                <Text style={[styles.infoLabelText, { fontSize: 14 * fontSizeScale, color: colors.textSecondary, flexShrink: 1 }]}>
                   {t('appPinSection')}
                 </Text>
               </View>
-              <View style={{ flexDirection: 'row', gap: 6 }}>
+              <View style={{ flexDirection: 'column', gap: 6, alignItems: 'flex-end', flexShrink: 0 }}>
                 {!hasPin ? (
                   <TouchableOpacity
                     style={[styles.changePasswordBtn, { backgroundColor: colors.accent }]}
@@ -634,7 +634,7 @@ export default function Profile() {
                 ) : (
                   <>
                     <TouchableOpacity
-                      style={[styles.changePasswordBtn, { backgroundColor: colors.accentDark }]}
+                      style={[styles.changePasswordBtn, { backgroundColor: colors.accentDark, paddingHorizontal: 12, paddingVertical: 6 }]}
                       onPress={() => setShowPinResetModal(true)}
                     >
                       <Text style={{ color: colors.accent, fontWeight: '600', fontSize: 12 * fontSizeScale }}>
@@ -642,7 +642,7 @@ export default function Profile() {
                       </Text>
                     </TouchableOpacity>
                     <TouchableOpacity
-                      style={[styles.changePasswordBtn, { backgroundColor: colors.badgeBg }]}
+                      style={[styles.changePasswordBtn, { backgroundColor: colors.badgeBg, paddingHorizontal: 12, paddingVertical: 6 }]}
                       onPress={async () => {
                         await removePin();
                         Alert.alert(t('success'), t('allSet'));
@@ -842,7 +842,7 @@ export default function Profile() {
 
             {/* Comfort Mode Toggle */}
             <View style={[styles.settingsRow, { borderBottomColor: colors.border }]}>
-              <View style={styles.infoLabel}>
+              <View style={[styles.infoLabel, { flex: 1, marginRight: 8 }]}>
                 <Ionicons name="accessibility-outline" size={iconSize} color={colors.accent} />
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.infoLabelText, { fontSize: 14 * fontSizeScale, color: colors.textSecondary }]}>{t('comfortModeLabel')}</Text>
@@ -987,6 +987,11 @@ export default function Profile() {
             </TouchableOpacity>
           </View>
         )}
+
+        {/* App Version */}
+        <Text style={{ textAlign: 'center', color: colors.textMuted, fontSize: 12 * fontSizeScale, marginTop: 16, marginBottom: 24 }}>
+          {APP_VERSION}
+        </Text>
       </ScrollView>
 
       {/* Profile Change Request Modal */}
