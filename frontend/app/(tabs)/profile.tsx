@@ -23,6 +23,7 @@ import * as Clipboard from 'expo-clipboard';
 import * as Linking from 'expo-linking';
 import { Switch } from 'react-native';
 import { COMFORT_BUTTON_HEIGHT, COMFORT_ICON_SIZE, APP_VERSION } from '@/src/utils/theme';
+import * as Localization from 'expo-localization';
 import { isRunningInExpoGo } from 'expo';
 
 // Helper to get notifications module dynamically
@@ -88,8 +89,8 @@ export default function Profile() {
 
   const loadLocalAvatar = async () => {
     if (user?.email) {
-      const stored = await storage.getItem(`user_avatar_${user.email}`);
-      if (stored) {
+      const stored = await storage.getItem(`user_avatar_${user.email}`, null);
+      if (stored && typeof stored === 'string') {
         setLocalAvatarUri(stored);
       }
     }
@@ -484,6 +485,25 @@ export default function Profile() {
     return tierColors[tier] || '#64748b';
   };
 
+  const formatPlanPrice = (plan: any) => {
+    if (!plan) return '';
+    if (plan.price === 0) return t('free') || 'ÜCRETSİZ';
+    let isTR = false;
+    try {
+      const locales = Localization.getLocales();
+      if (locales && locales.length > 0) {
+        const region = (locales[0].regionCode || locales[0].languageCode || '').toUpperCase();
+        if (region.includes('TR')) isTR = true;
+      }
+    } catch (e) {}
+    if (isTR) {
+      const trPrice = plan.country_pricing?.TR?.price ?? Math.round(plan.price * 30);
+      return `₺${trPrice} / ${t('lifetime') || 'Ömür Boyu'}`;
+    } else {
+      return `$${plan.price} / ${t('lifetime') || 'Lifetime'}`;
+    }
+  };
+
   const currentPlan = plans.find(p => p.name === user?.subscription_tier);
 
   return (
@@ -548,7 +568,7 @@ export default function Profile() {
               <View style={styles.subscriptionHeader}>
                 <Text style={[styles.planName, { fontSize: 20 * fontSizeScale, color: colors.textPrimary }]}>{currentPlan.display_name}</Text>
                 <Text style={[styles.planPrice, { fontSize: 18 * fontSizeScale, color: colors.accent }]}>
-                  {currentPlan.price === 0 ? t('free') || 'FREE' : `$${currentPlan.price}/yr`}
+                  {formatPlanPrice(currentPlan)}
                 </Text>
               </View>
               <View style={styles.featuresContainer}>
@@ -1121,7 +1141,7 @@ export default function Profile() {
               </TouchableOpacity>
             </View>
 
-            <ScrollView style={styles.plansScroll}>
+            <ScrollView style={styles.plansScroll} contentContainerStyle={{ paddingBottom: 140 }}>
               {plans.map((plan) => (
                 <View
                   key={plan.name}
@@ -1134,8 +1154,8 @@ export default function Profile() {
                   <View style={[styles.planHeader, { borderBottomColor: colors.border }]}>
                     <View>
                       <Text style={[styles.planTitle, { fontSize: 18 * fontSizeScale, color: colors.textPrimary }]}>{plan.display_name}</Text>
-                      <Text style={[styles.planPriceText, { fontSize: 16 * fontSizeScale, color: colors.textSecondary }]}>
-                        {plan.price === 0 ? t('free') || 'FREE' : `$${plan.price}/yr`}
+                      <Text style={[styles.planPriceText, { fontSize: 16 * fontSizeScale, color: colors.accent }]}>
+                        {formatPlanPrice(plan)}
                       </Text>
                     </View>
                     {plan.name === user?.subscription_tier && (

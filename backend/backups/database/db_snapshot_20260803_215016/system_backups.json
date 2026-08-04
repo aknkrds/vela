@@ -1,0 +1,21 @@
+[
+  {
+    "_id": "6a710d0ff213a968dffe0ee0",
+    "snapshot_id": "db_snapshot_20260803_215007",
+    "timestamp": "2026-08-03T21:50:07.757844",
+    "collections": {
+      "user_sessions": 0,
+      "point_packages": 1,
+      "users": 20,
+      "messages": 7,
+      "profile_requests": 2,
+      "checkin_history": 9,
+      "recipients": 1,
+      "campaigns": 0,
+      "devices": 1,
+      "support_tickets": 2,
+      "subscription_plans": 8
+    },
+    "path": "/Users/akinkaradas/Desktop/Vela/backend/backups/database/db_snapshot_20260803_215007"
+  }
+]

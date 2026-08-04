@@ -654,6 +654,14 @@
                 <i data-lucide="users"></i>
                 <span>Kullanıcılar</span>
             </div>
+            <div class="nav-item" data-tab="recipients">
+                <i data-lucide="contact"></i>
+                <span>Kayıtlı Alıcılar</span>
+            </div>
+            <div class="nav-item" data-tab="messages">
+                <i data-lucide="message-square"></i>
+                <span>Sistemdeki Mesajlar</span>
+            </div>
             <div class="nav-item" data-tab="staff">
                 <i data-lucide="user-cog"></i>
                 <span>Personel Yönetimi</span>
@@ -661,6 +669,10 @@
             <div class="nav-item" data-tab="plans">
                 <i data-lucide="credit-card"></i>
                 <span>Abonelik Planları</span>
+            </div>
+            <div class="nav-item" data-tab="campaigns">
+                <i data-lucide="tag"></i>
+                <span>İndirim Kodları</span>
             </div>
             <div class="nav-item" data-tab="packages">
                 <i data-lucide="shopping-bag"></i>
@@ -673,6 +685,10 @@
             <div class="nav-item" data-tab="support">
                 <i data-lucide="help-circle"></i>
                 <span>Destek Talepleri</span>
+            </div>
+            <div class="nav-item" data-tab="backups">
+                <i data-lucide="database"></i>
+                <span>Sistem Yedekleri</span>
             </div>
         </div>
         <div class="user-profile">
@@ -776,6 +792,93 @@
                 </div>
             </div>
 
+            <!-- PANEL: REGISTERED RECIPIENTS -->
+            <div id="panel-recipients" class="tab-panel">
+                <div class="filter-panel" style="justify-content: space-between;">
+                    <div style="display: flex; gap: 12px; align-items: center;">
+                        <input type="text" id="recipient-search-input" placeholder="Alıcı adı, e-posta veya telefon ile filtrele..." style="padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px; width: 320px; background: var(--surface); color: var(--text-primary); font-size: 14px;">
+                    </div>
+                    <span style="color: var(--text-muted); font-size: 13px;" id="recipients-count-text">Toplam: 0 alıcı</span>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Alıcı Adı</th>
+                                <th>Yakınlık Derecesi</th>
+                                <th>Telefon</th>
+                                <th>E-posta</th>
+                                <th>Kaydeden Kullanıcı</th>
+                                <th>Kayıt Tarihi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recipients-table-body">
+                            <!-- JS Filled -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- PANEL: SYSTEM MESSAGES -->
+            <div id="panel-messages" class="tab-panel">
+                <div class="filter-panel" style="justify-content: space-between;">
+                    <div style="display: flex; gap: 12px; align-items: center;">
+                        <input type="text" id="message-search-input" placeholder="Gönderen veya alıcı filtrele..." style="padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px; width: 320px; background: var(--surface); color: var(--text-primary); font-size: 14px;">
+                        <select id="message-type-filter" style="padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text-primary); font-size: 14px;">
+                            <option value="all">Tüm Tipler (Metin/Ses/Video)</option>
+                            <option value="text">Metin Mesajları</option>
+                            <option value="audio">Sesli Mesajlar</option>
+                            <option value="video">Video Mesajlar</option>
+                        </select>
+                    </div>
+                    <span style="color: var(--text-muted); font-size: 13px;" id="messages-count-text">Toplam: 0 mesaj</span>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Gönderen Kullanıcı</th>
+                                <th>Alıcı</th>
+                                <th>Mesaj Tipi</th>
+                                <th>İletim Modu</th>
+                                <th>İletim Kanalı</th>
+                                <th>Durum</th>
+                                <th>Oluşturulma Tarihi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="messages-table-body">
+                            <!-- JS Filled -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- PANEL: CAMPAIGN CODES -->
+            <div id="panel-campaigns" class="tab-panel">
+                <div class="filter-panel" style="justify-content: space-between;">
+                    <h3 style="font-size: 18px;">İndirim ve Kampanya Kodları</h3>
+                    <button class="btn-primary btn-flex" onclick="openAddCampaignModal()" style="display: flex; align-items: center; gap: 8px; padding: 10px 16px; font-weight: bold; background: var(--primary); border: none; border-radius: 8px; color: #fff; cursor: pointer;">
+                        <i data-lucide="plus"></i> Yeni Kampanya Kodu Ekle
+                    </button>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Kampanya Kodu</th>
+                                <th>İndirim Oranı</th>
+                                <th>Durum</th>
+                                <th>Oluşturulma Tarihi</th>
+                                <th>İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody id="campaigns-table-body">
+                            <!-- JS Filled -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
             <!-- PANEL: STAFF MANAGEMENT -->
             <div id="panel-staff" class="tab-panel">
                 <div class="filter-panel" style="justify-content: space-between;">
@@ -839,6 +942,50 @@
                 </div>
                 <div id="support-list-container" class="requests-list">
                     <!-- JS Filled -->
+                </div>
+            </div>
+
+            <!-- PANEL: SYSTEM BACKUPS -->
+            <div id="panel-backups" class="tab-panel">
+                <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin-bottom: 24px;">
+                    <div class="stat-card">
+                        <div class="stat-title">Yedeklenen Mesajlar</div>
+                        <div class="stat-value" id="backup-stat-messages">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-title">Yedek Medya Dosyaları</div>
+                        <div class="stat-value" id="backup-stat-media">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-title">Toplam Yedek Boyutu</div>
+                        <div class="stat-value" id="backup-stat-size">0 MB</div>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; background: var(--surface); padding: 16px 20px; border-radius: 12px; border: 1px solid var(--border);">
+                    <div>
+                        <h3 style="color: var(--primary); margin: 0 0 4px 0;">Veritabanı Snapshot & Medya Yedeği</h3>
+                        <p style="margin: 0; color: var(--text-muted); font-size: 13px;">Tüm veritabanı koleksiyonları ve ortam dosyaları bağımsız 'backups/' dizinine yedeklenir.</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="triggerManualBackup()" id="btn-manual-backup" style="display: flex; align-items: center; gap: 8px; padding: 10px 16px; font-weight: bold; background: var(--primary); border: none; border-radius: 8px; color: #fff; cursor: pointer;">
+                        <i data-lucide="hard-drive-download"></i> Manuel Tam Yedek Al
+                    </button>
+                </div>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Snapshot ID</th>
+                                <th>Tarih / Saat</th>
+                                <th>Koleksiyon İstatistikleri</th>
+                                <th>Yedek Dizini</th>
+                            </tr>
+                        </thead>
+                        <tbody id="backups-table-body">
+                            <!-- JS Filled -->
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
@@ -1137,11 +1284,15 @@
         // Tab Data Loading Dispatcher
         function loadTabData(tab) {
             if (tab === "overview") loadOverview();
+            else if (tab === "recipients") loadRecipients();
+            else if (tab === "messages") loadAdminMessages();
             else if (tab === "staff") loadStaff();
             else if (tab === "plans") loadPlans();
+            else if (tab === "campaigns") loadCampaigns();
             else if (tab === "packages") loadPackages();
             else if (tab === "requests") loadRequests();
             else if (tab === "support") loadSupport();
+            else if (tab === "backups") loadBackups();
         }
 
         // 1. OVERVIEW TAB
@@ -1929,6 +2080,299 @@
                 }
                 
                 renderSupportChat();
+            }
+        }
+
+        // BACKUPS TAB
+        async function loadBackups() {
+            try {
+                const res = await fetch(`${API_URL}/admin/backups`, { headers: { "Authorization": `Bearer ${token}` } });
+                if (res.ok) {
+                    const data = await res.json();
+                    document.getElementById("backup-stat-messages").innerText = data.total_messages_backed_up || 0;
+                    document.getElementById("backup-stat-media").innerText = data.total_media_files_backed_up || 0;
+                    document.getElementById("backup-stat-size").innerText = `${data.total_backup_size_mb || 0} MB`;
+
+                    const tbody = document.getElementById("backups-table-body");
+                    tbody.innerHTML = "";
+
+                    if (!data.db_snapshots || data.db_snapshots.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 20px; color: var(--text-muted);">Henüz veritabanı snapshot yedeği bulunmuyor.</td></tr>`;
+                        return;
+                    }
+
+                    data.db_snapshots.forEach(snapshot => {
+                        const tr = document.createElement("tr");
+                        const collSummary = snapshot.collections 
+                            ? Object.entries(snapshot.collections).map(([k, v]) => `${k}: ${v}`).join(", ")
+                            : "Veri yok";
+                        const dateStr = snapshot.timestamp ? new Date(snapshot.timestamp).toLocaleString("tr-TR") : "-";
+
+                        tr.innerHTML = `
+                            <td><strong style="color: var(--primary);">${snapshot.snapshot_id || "-"}</strong></td>
+                            <td>${dateStr}</td>
+                            <td><span style="font-size: 12px; color: var(--text-secondary);">${collSummary}</span></td>
+                            <td><code style="background: var(--surface); padding: 2px 6px; border-radius: 4px; font-size: 11px;">${snapshot.path || "-"}</code></td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
+            } catch (err) {
+                console.error("Error loading backups:", err);
+            }
+        }
+
+        async function triggerManualBackup() {
+            const btn = document.getElementById("btn-manual-backup");
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = `<i data-lucide="loader-2"></i> Yedeğe Alınıyor...`;
+            }
+            try {
+                const res = await fetch(`${API_URL}/admin/backups/trigger`, {
+                    method: "POST",
+                    headers: { "Authorization": `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    alert("Tam sistem yedeği (Veritabanı + Medya) başarıyla oluşturuldu.");
+                    loadBackups();
+                } else {
+                    alert("Yedekleme sırasında bir hata oluştu.");
+                }
+            } catch (err) {
+                alert("Ağ hatası.");
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = `<i data-lucide="hard-drive-download"></i> Manuel Tam Yedek Al`;
+                }
+                if (typeof lucide !== "undefined") {
+                    lucide.createIcons();
+                }
+            }
+        }
+
+        // RECIPIENTS TAB
+        let allRecipients = [];
+        async function loadRecipients() {
+            try {
+                const res = await fetch(`${API_URL}/admin/recipients`, { headers: { "Authorization": `Bearer ${token}` } });
+                if (res.ok) {
+                    allRecipients = await res.json();
+                    renderRecipients();
+                }
+            } catch (err) {
+                console.error("Error loading recipients:", err);
+            }
+        }
+
+        function renderRecipients() {
+            const searchVal = (document.getElementById("recipient-search-input")?.value || "").toLowerCase();
+            const tbody = document.getElementById("recipients-table-body");
+            if (!tbody) return;
+            tbody.innerHTML = "";
+
+            const filtered = allRecipients.filter(r => 
+                (r.name || "").toLowerCase().includes(searchVal) ||
+                (r.phone || "").toLowerCase().includes(searchVal) ||
+                (r.email || "").toLowerCase().includes(searchVal) ||
+                (r.user_name || "").toLowerCase().includes(searchVal)
+            );
+
+            const countEl = document.getElementById("recipients-count-text");
+            if (countEl) countEl.innerText = `Toplam: ${filtered.length} alıcı`;
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 20px; color: var(--text-muted);">Herhangi bir kayıtlı alıcı bulunamadı.</td></tr>`;
+                return;
+            }
+
+            filtered.forEach(r => {
+                const tr = document.createElement("tr");
+                const dateStr = r.created_at ? new Date(r.created_at).toLocaleDateString("tr-TR") : "-";
+                tr.innerHTML = `
+                    <td><strong>${r.name}</strong></td>
+                    <td><span class="badge" style="background: rgba(99, 102, 241, 0.15); color: var(--primary);">${r.relation || 'Alıcı'}</span></td>
+                    <td>${r.phone || '-'}</td>
+                    <td>${r.email || '-'}</td>
+                    <td><div style="font-weight: 500;">${r.user_name}</div><div style="font-size: 11px; color: var(--text-muted);">${r.user_email}</div></td>
+                    <td>${dateStr}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        document.getElementById("recipient-search-input")?.addEventListener("input", renderRecipients);
+
+        // MESSAGES TAB
+        let allAdminMessages = [];
+        async function loadAdminMessages() {
+            try {
+                const res = await fetch(`${API_URL}/admin/messages`, { headers: { "Authorization": `Bearer ${token}` } });
+                if (res.ok) {
+                    allAdminMessages = await res.json();
+                    renderAdminMessages();
+                }
+            } catch (err) {
+                console.error("Error loading admin messages:", err);
+            }
+        }
+
+        function renderAdminMessages() {
+            const searchVal = (document.getElementById("message-search-input")?.value || "").toLowerCase();
+            const typeVal = document.getElementById("message-type-filter")?.value || "all";
+            const tbody = document.getElementById("messages-table-body");
+            if (!tbody) return;
+            tbody.innerHTML = "";
+
+            const filtered = allAdminMessages.filter(m => {
+                const matchSearch = (m.user_name || "").toLowerCase().includes(searchVal) ||
+                                    (m.user_email || "").toLowerCase().includes(searchVal) ||
+                                    (m.recipient_name || "").toLowerCase().includes(searchVal);
+                const matchType = typeVal === "all" || m.message_type === typeVal;
+                return matchSearch && matchType;
+            });
+
+            const countEl = document.getElementById("messages-count-text");
+            if (countEl) countEl.innerText = `Toplam: ${filtered.length} mesaj`;
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 20px; color: var(--text-muted);">Mesaj bulunamadı.</td></tr>`;
+                return;
+            }
+
+            filtered.forEach(m => {
+                const tr = document.createElement("tr");
+                const dateStr = m.created_at ? new Date(m.created_at).toLocaleDateString("tr-TR") : "-";
+                const typeBadge = m.message_type === "audio" 
+                    ? `<span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;">🔊 SES</span>`
+                    : m.message_type === "video"
+                    ? `<span class="badge" style="background: rgba(239, 68, 68, 0.15); color: #ef4444;">📹 VİDEO</span>`
+                    : `<span class="badge" style="background: rgba(99, 102, 241, 0.15); color: var(--primary);">📝 METİN</span>`;
+
+                const statusBadge = m.is_delivered || m.status === "delivered"
+                    ? `<span class="badge badge-active">İLETİLDİ</span>`
+                    : `<span class="badge badge-inactive">BEKLEMEDE</span>`;
+
+                const modeStr = m.delivery_mode === "scheduled_date"
+                    ? `📅 Tarihli (${m.scheduled_at ? new Date(m.scheduled_at).toLocaleDateString("tr-TR") : "-"})`
+                    : `❤️ Vasiyet (Yoklama)`;
+
+                tr.innerHTML = `
+                    <td><div style="font-weight: 500;">${m.user_name}</div><div style="font-size: 11px; color: var(--text-muted);">${m.user_email}</div></td>
+                    <td><strong>${m.recipient_name}</strong></td>
+                    <td>${typeBadge}</td>
+                    <td><span style="font-size: 12px; color: var(--text-secondary);">${modeStr}</span></td>
+                    <td><span style="font-size: 12px;">${m.delivery_channel?.toUpperCase() || 'BOTH'}</span></td>
+                    <td>${statusBadge}</td>
+                    <td>${dateStr}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        document.getElementById("message-search-input")?.addEventListener("input", renderAdminMessages);
+        document.getElementById("message-type-filter")?.addEventListener("change", renderAdminMessages);
+
+        // CAMPAIGNS TAB
+        let allCampaigns = [];
+        async function loadCampaigns() {
+            try {
+                const res = await fetch(`${API_URL}/admin/campaigns`, { headers: { "Authorization": `Bearer ${token}` } });
+                if (res.ok) {
+                    allCampaigns = await res.json();
+                    renderCampaigns();
+                }
+            } catch (err) {
+                console.error("Error loading campaigns:", err);
+            }
+        }
+
+        function renderCampaigns() {
+            const tbody = document.getElementById("campaigns-table-body");
+            if (!tbody) return;
+            tbody.innerHTML = "";
+
+            if (allCampaigns.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 20px; color: var(--text-muted);">Kampanya kodu bulunmuyor.</td></tr>`;
+                return;
+            }
+
+            allCampaigns.forEach(c => {
+                const tr = document.createElement("tr");
+                const dateStr = c.created_at ? new Date(c.created_at).toLocaleDateString("tr-TR") : "-";
+                const statusBadge = c.is_active 
+                    ? `<span class="badge badge-active">AKTİF</span>`
+                    : `<span class="badge badge-inactive">PASİF</span>`;
+
+                tr.innerHTML = `
+                    <td><strong style="color: var(--primary); font-size: 16px;">${c.code}</strong></td>
+                    <td><strong style="color: var(--success);">%${c.discount_percentage} İndirim</strong></td>
+                    <td>${statusBadge}</td>
+                    <td>${dateStr}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline" onclick="toggleCampaignStatus('${c._id}', ${!c.is_active})">
+                            ${c.is_active ? 'Deaktife Al' : 'Aktifleştir'}
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteCampaign('${c._id}')">Sil</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function toggleCampaignStatus(id, isActive) {
+            try {
+                const res = await fetch(`${API_URL}/admin/campaigns/${id}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+                    body: JSON.stringify({ is_active: isActive })
+                });
+                if (res.ok) {
+                    loadCampaigns();
+                }
+            } catch (err) {
+                alert("Hata oluştu.");
+            }
+        }
+
+        async function deleteCampaign(id) {
+            if (confirm("Bu kampanya kodunu silmek istediğinize emin misiniz?")) {
+                try {
+                    const res = await fetch(`${API_URL}/admin/campaigns/${id}`, {
+                        method: "DELETE",
+                        headers: { "Authorization": `Bearer ${token}` }
+                    });
+                    if (res.ok) {
+                        loadCampaigns();
+                    }
+                } catch (err) {
+                    alert("Silme başarısız.");
+                }
+            }
+        }
+
+        async function openAddCampaignModal() {
+            const code = prompt("Yeni Kampanya Kodu (Örn: YAZ2026):");
+            if (!code) return;
+            const discount = prompt("İndirim Yüzdesi (Örn: 20):", "20");
+            if (!discount) return;
+
+            try {
+                const res = await fetch(`${API_URL}/admin/campaigns`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+                    body: JSON.stringify({ code: code.toUpperCase().trim(), discount_percentage: parseInt(discount) })
+                });
+                if (res.ok) {
+                    alert("Kampanya kodu başarıyla oluşturuldu.");
+                    loadCampaigns();
+                } else {
+                    const data = await res.json();
+                    alert("Hata: " + (data.detail || "Kampanya oluşturulamadı"));
+                }
+            } catch (err) {
+                alert("Ağ hatası.");
             }
         }
     </script>

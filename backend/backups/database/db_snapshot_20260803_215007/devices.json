@@ -1,0 +1,11 @@
+[
+  {
+    "_id": "6a5e5d920c2dce0dbbff15e7",
+    "device_id": "0d418c21ebd91a3e2e9c395006c1be36",
+    "is_premium": true,
+    "expires_at": "2026-08-19T17:46:19.069000",
+    "cancelled": true,
+    "created_at": "2026-07-20T17:40:34.685000",
+    "updated_at": "2026-07-20T17:46:44.213000"
+  }
+]

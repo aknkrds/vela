@@ -1,0 +1,251 @@
+[
+  {
+    "_id": "6a54bf6e250fd357493149ab",
+    "name": "free",
+    "display_name": "Free",
+    "price": 0,
+    "max_recipients": 1,
+    "max_messages": 1,
+    "allowed_types": [
+      "text"
+    ],
+    "features": [
+      "1 recipient",
+      "1 text message",
+      "With ads"
+    ],
+    "country_pricing": {
+      "TR": {
+        "price": 0,
+        "currency": "TRY",
+        "symbol": "₺"
+      }
+    },
+    "payment_methods": [
+      "free"
+    ],
+    "billing_cycle": "lifetime",
+    "currency": "USD"
+  },
+  {
+    "_id": "6a54bf6e250fd357493149ac",
+    "name": "basic",
+    "display_name": "Basic",
+    "price": 249.0,
+    "max_recipients": 1,
+    "max_messages": 1,
+    "allowed_types": [
+      "text"
+    ],
+    "features": [
+      "1 recipient",
+      "1 text message",
+      "No ads"
+    ],
+    "country_pricing": {
+      "TR": {
+        "price": 299.99,
+        "currency": "TRY",
+        "symbol": "₺"
+      }
+    },
+    "payment_methods": [
+      "credit_card",
+      "stripe"
+    ],
+    "billing_cycle": "lifetime",
+    "currency": "USD"
+  },
+  {
+    "_id": "6a54bf6e250fd357493149ad",
+    "name": "silver",
+    "display_name": "Silver",
+    "price": 19.99,
+    "max_recipients": 1,
+    "max_messages": 1,
+    "allowed_types": [
+      "text",
+      "audio"
+    ],
+    "features": [
+      "1 recipient",
+      "1 text or audio message",
+      "No ads"
+    ],
+    "country_pricing": {
+      "TR": {
+        "price": 599.99,
+        "currency": "TRY",
+        "symbol": "₺"
+      }
+    },
+    "payment_methods": [
+      "credit_card",
+      "stripe"
+    ],
+    "billing_cycle": "lifetime",
+    "currency": "USD"
+  },
+  {
+    "_id": "6a54bf6e250fd357493149ae",
+    "name": "gold",
+    "display_name": "Gold",
+    "price": 29.99,
+    "max_recipients": 1,
+    "max_messages": 1,
+    "allowed_types": [
+      "text",
+      "audio",
+      "video"
+    ],
+    "features": [
+      "1 recipient",
+      "1 message (text/audio/video)",
+      "No ads",
+      "Extra recipient available"
+    ],
+    "country_pricing": {
+      "TR": {
+        "price": 899.99,
+        "currency": "TRY",
+        "symbol": "₺"
+      }
+    },
+    "payment_methods": [
+      "credit_card",
+      "stripe"
+    ],
+    "billing_cycle": "lifetime",
+    "currency": "USD"
+  },
+  {
+    "_id": "6a54bf6e250fd357493149af",
+    "name": "diamond",
+    "display_name": "Diamond",
+    "price": 49.99,
+    "max_recipients": 2,
+    "max_messages": 2,
+    "allowed_types": [
+      "text",
+      "audio",
+      "video"
+    ],
+    "features": [
+      "2 recipients",
+      "2 messages (text/audio/video)",
+      "No ads",
+      "Extra recipients available"
+    ],
+    "country_pricing": {
+      "TR": {
+        "price": 1499.99,
+        "currency": "TRY",
+        "symbol": "₺"
+      }
+    },
+    "payment_methods": [
+      "credit_card",
+      "stripe"
+    ],
+    "billing_cycle": "lifetime",
+    "currency": "USD"
+  },
+  {
+    "_id": "6a54bf6e250fd357493149b0",
+    "name": "blue_diamond",
+    "display_name": "Blue Diamond",
+    "price": 99.99,
+    "max_recipients": 5,
+    "max_messages": 5,
+    "allowed_types": [
+      "text",
+      "audio",
+      "video"
+    ],
+    "features": [
+      "5 recipients",
+      "5 messages (text/audio/video)",
+      "No ads",
+      "Extra recipients available"
+    ],
+    "country_pricing": {
+      "TR": {
+        "price": 2999.99,
+        "currency": "TRY",
+        "symbol": "₺"
+      }
+    },
+    "payment_methods": [
+      "credit_card",
+      "stripe"
+    ],
+    "billing_cycle": "lifetime",
+    "currency": "USD"
+  },
+  {
+    "_id": "6a54bf6e250fd357493149b1",
+    "name": "platinum",
+    "display_name": "Platinum",
+    "price": 199.99,
+    "max_recipients": 25,
+    "max_messages": 25,
+    "allowed_types": [
+      "text",
+      "audio",
+      "video"
+    ],
+    "features": [
+      "25 recipients",
+      "25 messages (any type)",
+      "Multiple messages per recipient",
+      "50% off extra recipients",
+      "No ads"
+    ],
+    "country_pricing": {
+      "TR": {
+        "price": 5999.99,
+        "currency": "TRY",
+        "symbol": "₺"
+      }
+    },
+    "payment_methods": [
+      "credit_card",
+      "stripe"
+    ],
+    "billing_cycle": "lifetime",
+    "currency": "USD"
+  },
+  {
+    "_id": "6a54bf6e250fd357493149b2",
+    "name": "galaxy",
+    "display_name": "Galaxy",
+    "price": 499.99,
+    "max_recipients": 999999,
+    "max_messages": 999999,
+    "allowed_types": [
+      "text",
+      "audio",
+      "video"
+    ],
+    "features": [
+      "Unlimited recipients",
+      "Unlimited messages",
+      "All message types",
+      "No ads",
+      "Priority support"
+    ],
+    "country_pricing": {
+      "TR": {
+        "price": 14999.99,
+        "currency": "TRY",
+        "symbol": "₺"
+      }
+    },
+    "payment_methods": [
+      "credit_card",
+      "stripe"
+    ],
+    "billing_cycle": "lifetime",
+    "currency": "USD"
+  }
+]

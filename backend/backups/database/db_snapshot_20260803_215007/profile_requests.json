@@ -1,0 +1,28 @@
+[
+  {
+    "_id": "6a55198afb6cab1f603f63f8",
+    "request_id": "req_f5b0411f53b5",
+    "user_id": "user_8c0ffe815dd0",
+    "full_name": "gülsenem ÇOBAN",
+    "user_email": "gulsenemdurukaya@gmail.com",
+    "field": "phone",
+    "old_value": "",
+    "new_value": "+905525519698",
+    "reason": "Numara ekleme",
+    "status": "completed",
+    "created_at": "2026-07-13T16:59:54.440000"
+  },
+  {
+    "_id": "6a551a74fb6cab1f603f63f9",
+    "request_id": "req_27a52a5c5ca1",
+    "user_id": "user_d14c773ab895",
+    "full_name": "Akin Admin",
+    "user_email": "akin@symi.com.tr",
+    "field": "phone",
+    "old_value": "+905555555555",
+    "new_value": "+905337328983",
+    "reason": "Senem",
+    "status": "completed",
+    "created_at": "2026-07-13T17:03:48.638000"
+  }
+]

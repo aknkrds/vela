@@ -22,6 +22,7 @@ import { format } from 'date-fns';
 import { tr, enUS } from 'date-fns/locale';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
+import AdBanner from '@/src/components/AdBanner';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -406,6 +407,9 @@ export default function Home() {
             <Text style={[styles.statLabel, { fontSize: 12 * fontSizeScale, color: colors.textSecondary }]}>{t('statusLabel')}</Text>
           </View>
         </View>
+
+        {/* Ad Banner for Basic & Free Users */}
+        <AdBanner placement="home" />
 
         {/* Info Section Button */}
         <TouchableOpacity

@@ -5,6 +5,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
+import uvicorn
 import os
 import sys
 import time
@@ -42,6 +43,87 @@ EMERGENT_AUTH_URL = "https://demobackend.emergentagent.com/auth/v1/env/oauth/ses
 # Create the main app
 app = FastAPI(title="Final Message API")
 api_router = APIRouter(prefix="/api")
+
+# ---------------------------------------------------------
+# BACKUP SYSTEM SETUP (Automatic & Redundant Data Storage)
+# ---------------------------------------------------------
+BACKUP_DIR = ROOT_DIR / "backups"
+BACKUP_UPLOADS_DIR = BACKUP_DIR / "uploads"
+BACKUP_MESSAGES_DIR = BACKUP_DIR / "messages"
+BACKUP_DATABASE_DIR = BACKUP_DIR / "database"
+
+BACKUP_DIR.mkdir(parents=True, exist_ok=True)
+BACKUP_UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
+BACKUP_MESSAGES_DIR.mkdir(parents=True, exist_ok=True)
+BACKUP_DATABASE_DIR.mkdir(parents=True, exist_ok=True)
+
+import json
+import shutil
+
+async def backup_message_to_file(message_dict: dict):
+    """Saves a standalone copy of the message (including encrypted payload) to backups/messages/."""
+    try:
+        msg_id = message_dict.get("_id") or str(uuid.uuid4())
+        backup_file = BACKUP_MESSAGES_DIR / f"msg_backup_{msg_id}.json"
+        
+        serializable_msg = {}
+        for k, v in message_dict.items():
+            if isinstance(v, datetime):
+                serializable_msg[k] = v.isoformat()
+            elif isinstance(v, ObjectId):
+                serializable_msg[k] = str(v)
+            else:
+                serializable_msg[k] = v
+                
+        with open(backup_file, "w", encoding="utf-8") as f:
+            json.dump(serializable_msg, f, ensure_ascii=False, indent=2)
+            
+        content = message_dict.get("encrypted_content", "")
+        if isinstance(content, str) and content.startswith("data:"):
+            media_backup_file = BACKUP_UPLOADS_DIR / f"msg_media_{msg_id}.bin"
+            with open(media_backup_file, "w", encoding="utf-8") as f_media:
+                f_media.write(content)
+    except Exception as e:
+        logging.getLogger(__name__).error(f"Error making message backup: {e}")
+
+class MongoJSONEncoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, datetime):
+            return o.isoformat()
+        if isinstance(o, ObjectId):
+            return str(o)
+        return super().default(o)
+
+async def perform_full_database_backup() -> dict:
+    """Creates a complete JSON snapshot of all database collections in backups/database/."""
+    try:
+        now_str = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+        snapshot_dir = BACKUP_DATABASE_DIR / f"db_snapshot_{now_str}"
+        snapshot_dir.mkdir(parents=True, exist_ok=True)
+        
+        collections = await db.list_collection_names()
+        stats_summary = {}
+        
+        for coll_name in collections:
+            docs = await db[coll_name].find({}).to_list(100000)
+            coll_file = snapshot_dir / f"{coll_name}.json"
+            with open(coll_file, "w", encoding="utf-8") as f:
+                f.write(json.dumps(docs, cls=MongoJSONEncoder, ensure_ascii=False, indent=2))
+                
+            stats_summary[coll_name] = len(docs)
+            
+        backup_record = {
+            "snapshot_id": f"db_snapshot_{now_str}",
+            "timestamp": datetime.utcnow().isoformat(),
+            "collections": stats_summary,
+            "path": str(snapshot_dir)
+        }
+        await db.system_backups.insert_one(dict(backup_record))
+        logging.getLogger(__name__).info(f"Database backup completed successfully: db_snapshot_{now_str}")
+        return backup_record
+    except Exception as e:
+        logging.getLogger(__name__).error(f"Error performing database backup: {e}")
+        raise e
 
 # ---------------------------------------------------------
 # LOGGING SETUP (Winston & Morgan Style Dual-File Logging)
@@ -469,7 +551,7 @@ async def health_check():
     """Health check endpoint to verify server is running and MongoDB is accessible."""
     try:
         await db.command("ping")
-        return {"status": "healthy", "database": "connected", "version": "1.1.1"}
+        return {"status": "healthy", "database": "connected", "version": "1.2.0"}
     except Exception as e:
         return {"status": "unhealthy", "database": "disconnected", "error": str(e)}
 
@@ -1046,6 +1128,9 @@ async def create_message(message_data: MessageCreate, current_user: dict = Depen
         {"$inc": {"symi_points": points_to_award}}
     )
     
+    # Instant Message & Media Backup
+    await backup_message_to_file(message_dict)
+    
     return message_dict
 
 @api_router.get("/messages")
@@ -1276,6 +1361,80 @@ async def get_admin_stats(current_user: dict = Depends(require_permission("can_v
         "deceased_users": deceased_users,
         "total_messages": total_messages
     }
+
+@api_router.get("/admin/recipients")
+async def get_admin_recipients(current_user: dict = Depends(require_permission("can_view_users"))):
+    recipients = await db.recipients.find({}).sort("created_at", -1).to_list(1000)
+    user_ids = list(set([r["user_id"] for r in recipients if "user_id" in r]))
+    
+    users_map = {}
+    if user_ids:
+        valid_oids = [ObjectId(uid) for uid in user_ids if ObjectId.is_valid(uid)]
+        users_list = await db.users.find({"_id": {"$in": valid_oids}}).to_list(1000)
+        for u in users_list:
+            users_map[str(u["_id"])] = u
+            
+    res = []
+    for r in recipients:
+        r_id = str(r["_id"])
+        u_info = users_map.get(r.get("user_id", ""), {})
+        created_str = r.get("created_at").isoformat() if isinstance(r.get("created_at"), datetime) else r.get("created_at")
+        res.append({
+            "_id": r_id,
+            "name": r.get("name", "Bilinmeyen"),
+            "phone": r.get("phone", ""),
+            "email": r.get("email", ""),
+            "relation": r.get("relation", ""),
+            "created_at": created_str,
+            "user_name": u_info.get("full_name", "Bilinmeyen Kullanıcı"),
+            "user_email": u_info.get("email", ""),
+            "user_id": r.get("user_id", "")
+        })
+    return res
+
+@api_router.get("/admin/messages")
+async def get_admin_messages(current_user: dict = Depends(require_permission("can_view_users"))):
+    messages = await db.messages.find({}).sort("created_at", -1).to_list(1000)
+    
+    user_ids = list(set([m["user_id"] for m in messages if "user_id" in m]))
+    recip_ids = list(set([m["recipient_id"] for m in messages if "recipient_id" in m]))
+    
+    users_map = {}
+    if user_ids:
+        valid_uoids = [ObjectId(uid) for uid in user_ids if ObjectId.is_valid(uid)]
+        u_list = await db.users.find({"_id": {"$in": valid_uoids}}).to_list(1000)
+        for u in u_list:
+            users_map[str(u["_id"])] = u
+            
+    recip_map = {}
+    if recip_ids:
+        valid_roids = [ObjectId(rid) for rid in recip_ids if ObjectId.is_valid(rid)]
+        r_list = await db.recipients.find({"_id": {"$in": valid_roids}}).to_list(1000)
+        for r in r_list:
+            recip_map[str(r["_id"])] = r
+            
+    res = []
+    for m in messages:
+        u_info = users_map.get(m.get("user_id", ""), {})
+        r_info = recip_map.get(m.get("recipient_id", ""), {})
+        created_str = m.get("created_at").isoformat() if isinstance(m.get("created_at"), datetime) else m.get("created_at")
+        sched_str = m.get("scheduled_at").isoformat() if isinstance(m.get("scheduled_at"), datetime) else m.get("scheduled_at")
+        res.append({
+            "_id": str(m["_id"]),
+            "message_type": m.get("message_type", "text"),
+            "delivery_mode": m.get("delivery_mode", "checkin_based"),
+            "scheduled_at": sched_str,
+            "delivery_channel": m.get("delivery_channel", "both"),
+            "status": m.get("status", "pending"),
+            "is_delivered": m.get("is_delivered", False),
+            "created_at": created_str,
+            "user_name": u_info.get("full_name", "Bilinmeyen Kullanıcı"),
+            "user_email": u_info.get("email", ""),
+            "recipient_name": r_info.get("name", m.get("recipient_name", "Bilinmeyen Alıcı")),
+            "recipient_phone": r_info.get("phone", ""),
+            "recipient_email": r_info.get("email", "")
+        })
+    return res
 
 @api_router.put("/admin/users/{user_id}/status")
 async def update_user_status(user_id: str, status: str, current_user: dict = Depends(require_permission("can_edit_user_status"))):
@@ -1904,6 +2063,14 @@ def save_base64_image(base64_str: str) -> str:
     file_path = upload_dir / filename
     with open(file_path, "wb") as f:
         f.write(image_data)
+        
+    try:
+        backup_file_path = BACKUP_UPLOADS_DIR / f"backup_{filename}"
+        with open(backup_file_path, "wb") as bf:
+            bf.write(image_data)
+    except Exception as err:
+        logging.getLogger(__name__).error(f"Failed to save backup image: {err}")
+
     return f"/uploads/{filename}"
 
 # Support Tickets API
@@ -2208,115 +2375,130 @@ async def startup_db_indexes():
         # 2. Delete old admin if exists
         await db.users.delete_one({"email": "admin@finalmessage.com"})
         
-        # 3. Seed default plans if empty
+        # 3. Seed default plans or update existing to lifetime and country pricing
+        default_plans = [
+            {
+                "name": "free",
+                "display_name": "Free",
+                "price": 0,
+                "currency": "USD",
+                "max_recipients": 1,
+                "max_messages": 1,
+                "allowed_types": ["text"],
+                "features": ["1 recipient", "1 text message", "With ads"],
+                "country_pricing": {"TR": {"price": 0, "currency": "TRY", "symbol": "₺"}},
+                "payment_methods": ["free"],
+                "billing_cycle": "lifetime"
+            },
+            {
+                "name": "basic",
+                "display_name": "Basic",
+                "price": 9.99,
+                "currency": "USD",
+                "max_recipients": 1,
+                "max_messages": 1,
+                "allowed_types": ["text"],
+                "features": ["1 recipient", "1 text message", "With ads"],
+                "country_pricing": {"TR": {"price": 299.99, "currency": "TRY", "symbol": "₺"}},
+                "payment_methods": ["credit_card", "stripe"],
+                "billing_cycle": "lifetime"
+            },
+            {
+                "name": "silver",
+                "display_name": "Silver",
+                "price": 19.99,
+                "currency": "USD",
+                "max_recipients": 1,
+                "max_messages": 1,
+                "allowed_types": ["text", "audio"],
+                "features": ["1 recipient", "1 text or audio message", "No ads"],
+                "country_pricing": {"TR": {"price": 599.99, "currency": "TRY", "symbol": "₺"}},
+                "payment_methods": ["credit_card", "stripe"],
+                "billing_cycle": "lifetime"
+            },
+            {
+                "name": "gold",
+                "display_name": "Gold",
+                "price": 29.99,
+                "currency": "USD",
+                "max_recipients": 1,
+                "max_messages": 1,
+                "allowed_types": ["text", "audio", "video"],
+                "features": ["1 recipient", "1 message (text/audio/video)", "No ads", "Extra recipient available"],
+                "country_pricing": {"TR": {"price": 899.99, "currency": "TRY", "symbol": "₺"}},
+                "payment_methods": ["credit_card", "stripe"],
+                "billing_cycle": "lifetime"
+            },
+            {
+                "name": "diamond",
+                "display_name": "Diamond",
+                "price": 49.99,
+                "currency": "USD",
+                "max_recipients": 2,
+                "max_messages": 2,
+                "allowed_types": ["text", "audio", "video"],
+                "features": ["2 recipients", "2 messages (text/audio/video)", "No ads", "Extra recipients available"],
+                "country_pricing": {"TR": {"price": 1499.99, "currency": "TRY", "symbol": "₺"}},
+                "payment_methods": ["credit_card", "stripe"],
+                "billing_cycle": "lifetime"
+            },
+            {
+                "name": "blue_diamond",
+                "display_name": "Blue Diamond",
+                "price": 99.99,
+                "currency": "USD",
+                "max_recipients": 5,
+                "max_messages": 5,
+                "allowed_types": ["text", "audio", "video"],
+                "features": ["5 recipients", "5 messages (text/audio/video)", "No ads", "Extra recipients available"],
+                "country_pricing": {"TR": {"price": 2999.99, "currency": "TRY", "symbol": "₺"}},
+                "payment_methods": ["credit_card", "stripe"],
+                "billing_cycle": "lifetime"
+            },
+            {
+                "name": "platinum",
+                "display_name": "Platinum",
+                "price": 199.99,
+                "currency": "USD",
+                "max_recipients": 25,
+                "max_messages": 25,
+                "allowed_types": ["text", "audio", "video"],
+                "features": ["25 recipients", "25 messages (any type)", "Multiple messages per recipient", "50% off extra recipients", "No ads"],
+                "country_pricing": {"TR": {"price": 5999.99, "currency": "TRY", "symbol": "₺"}},
+                "payment_methods": ["credit_card", "stripe"],
+                "billing_cycle": "lifetime"
+            },
+            {
+                "name": "galaxy",
+                "display_name": "Galaxy",
+                "price": 499.99,
+                "currency": "USD",
+                "max_recipients": 999999,
+                "max_messages": 999999,
+                "allowed_types": ["text", "audio", "video"],
+                "features": ["Unlimited recipients", "Unlimited messages", "All message types", "No ads", "Priority support"],
+                "country_pricing": {"TR": {"price": 14999.99, "currency": "TRY", "symbol": "₺"}},
+                "payment_methods": ["credit_card", "stripe"],
+                "billing_cycle": "lifetime"
+            }
+        ]
+        
         plans_count = await db.subscription_plans.count_documents({})
         if plans_count == 0:
-            default_plans = [
-                {
-                    "name": "free",
-                    "display_name": "Free",
-                    "price": 0,
-                    "max_recipients": 1,
-                    "max_messages": 1,
-                    "allowed_types": ["text"],
-                    "features": ["1 recipient", "1 text message", "With ads"],
-                    "country_pricing": {},
-                    "payment_methods": ["free"],
-                    "billing_cycle": "yearly"
-                },
-                {
-                    "name": "basic",
-                    "display_name": "Basic",
-                    "price": 9.99,
-                    "max_recipients": 1,
-                    "max_messages": 1,
-                    "allowed_types": ["text"],
-                    "features": ["1 recipient", "1 text message", "No ads"],
-                    "country_pricing": {},
-                    "payment_methods": ["credit_card", "stripe"],
-                    "billing_cycle": "yearly"
-                },
-                {
-                    "name": "silver",
-                    "display_name": "Silver",
-                    "price": 19.99,
-                    "max_recipients": 1,
-                    "max_messages": 1,
-                    "allowed_types": ["text", "audio"],
-                    "features": ["1 recipient", "1 text or audio message", "No ads"],
-                    "country_pricing": {},
-                    "payment_methods": ["credit_card", "stripe"],
-                    "billing_cycle": "yearly"
-                },
-                {
-                    "name": "gold",
-                    "display_name": "Gold",
-                    "price": 29.99,
-                    "max_recipients": 1,
-                    "max_messages": 1,
-                    "allowed_types": ["text", "audio", "video"],
-                    "features": ["1 recipient", "1 message (text/audio/video)", "No ads", "Extra recipient available"],
-                    "country_pricing": {},
-                    "payment_methods": ["credit_card", "stripe"],
-                    "billing_cycle": "yearly"
-                },
-                {
-                    "name": "diamond",
-                    "display_name": "Diamond",
-                    "price": 49.99,
-                    "max_recipients": 2,
-                    "max_messages": 2,
-                    "allowed_types": ["text", "audio", "video"],
-                    "features": ["2 recipients", "2 messages (text/audio/video)", "No ads", "Extra recipients available"],
-                    "country_pricing": {},
-                    "payment_methods": ["credit_card", "stripe"],
-                    "billing_cycle": "yearly"
-                },
-                {
-                    "name": "blue_diamond",
-                    "display_name": "Blue Diamond",
-                    "price": 99.99,
-                    "max_recipients": 5,
-                    "max_messages": 5,
-                    "allowed_types": ["text", "audio", "video"],
-                    "features": ["5 recipients", "5 messages (text/audio/video)", "No ads", "Extra recipients available"],
-                    "country_pricing": {},
-                    "payment_methods": ["credit_card", "stripe"],
-                    "billing_cycle": "yearly"
-                },
-                {
-                    "name": "platinum",
-                    "display_name": "Platinum",
-                    "price": 199.99,
-                    "max_recipients": 25,
-                    "max_messages": 25,
-                    "allowed_types": ["text", "audio", "video"],
-                    "features": ["25 recipients", "25 messages (any type)", "Multiple messages per recipient", "50% off extra recipients", "No ads"],
-                    "country_pricing": {},
-                    "payment_methods": ["credit_card", "stripe"],
-                    "billing_cycle": "yearly"
-                },
-                {
-                    "name": "galaxy",
-                    "display_name": "Galaxy",
-                    "price": 499.99,
-                    "max_recipients": 999999,
-                    "max_messages": 999999,
-                    "allowed_types": ["text", "audio", "video"],
-                    "features": ["Unlimited recipients", "Unlimited messages", "All message types", "No ads", "Priority support"],
-                    "country_pricing": {},
-                    "payment_methods": ["credit_card", "stripe"],
-                    "billing_cycle": "lifetime"
-                }
-            ]
             await db.subscription_plans.insert_many(default_plans)
-            logger.info("Subscription plans seeded successfully")
+            logger.info("Subscription plans seeded successfully with lifetime billing cycle")
         else:
-            await db.subscription_plans.update_many(
-                {"billing_cycle": {"$exists": False}},
-                {"$set": {"billing_cycle": "yearly"}}
-            )
-            logger.info("Subscription plans billing_cycle backfilled successfully")
+            # Force update all existing plans to lifetime and set country pricing
+            for plan_def in default_plans:
+                await db.subscription_plans.update_one(
+                    {"name": plan_def["name"]},
+                    {"$set": {
+                        "billing_cycle": "lifetime",
+                        "country_pricing": plan_def["country_pricing"],
+                        "currency": "USD"
+                    }}
+                )
+            logger.info("Subscription plans updated to lifetime and country pricing set")
             
         # 4. Seed default point packages if empty
         pkg_count = await db.point_packages.count_documents({})
@@ -2400,6 +2582,70 @@ async def process_scheduled_messages_loop():
         
         await asyncio.sleep(60)
 
+# ---------------------------------------------------------
+# BACKUP ADMIN ENDPOINTS & PERIODIC WORKER
+# ---------------------------------------------------------
+@api_router.get("/admin/backups")
+async def get_backup_status(current_user: dict = Depends(get_current_user)):
+    """Admin endpoint to retrieve summary of backups, total files, and DB snapshots."""
+    if not current_user.get("role") == "admin" and not current_user.get("is_admin"):
+        raise HTTPException(status_code=403, detail="Admin privileges required")
+        
+    db_snapshots = await db.system_backups.find({}).sort("timestamp", -1).to_list(100)
+    for s in db_snapshots:
+        s["_id"] = str(s["_id"])
+        
+    msg_backups_count = len(list(BACKUP_MESSAGES_DIR.glob("*.json")))
+    upload_backups_count = len(list(BACKUP_UPLOADS_DIR.glob("*")))
+    
+    total_size = 0
+    for p in BACKUP_DIR.rglob("*"):
+        if p.is_file():
+            total_size += p.stat().st_size
+            
+    return {
+        "status": "healthy",
+        "backup_directory": str(BACKUP_DIR),
+        "total_messages_backed_up": msg_backups_count,
+        "total_media_files_backed_up": upload_backups_count,
+        "total_backup_size_bytes": total_size,
+        "total_backup_size_mb": round(total_size / (1024 * 1024), 2),
+        "db_snapshots": db_snapshots
+    }
+
+@api_router.post("/admin/backups/trigger")
+async def trigger_manual_backup(current_user: dict = Depends(get_current_user)):
+    """Admin endpoint to trigger a full database snapshot and file backup."""
+    if not current_user.get("role") == "admin" and not current_user.get("is_admin"):
+        raise HTTPException(status_code=403, detail="Admin privileges required")
+        
+    res = await perform_full_database_backup()
+    return {
+        "success": True,
+        "message": "Full database and media snapshot created successfully",
+        "backup_data": res
+    }
+
+async def periodic_backup_loop():
+    """Runs an automatic database snapshot backup every 24 hours."""
+    while True:
+        try:
+            await asyncio.sleep(86400)
+            logging.getLogger(__name__).info("[PERIODIC BACKUP WORKER] Running 24h scheduled database snapshot...")
+            await perform_full_database_backup()
+        except asyncio.CancelledError:
+            break
+        except Exception as e:
+            logging.getLogger(__name__).error(f"[PERIODIC BACKUP EXCEPTION] {e}")
+
+@app.on_event("startup")
+async def start_backup_system_worker():
+    try:
+        await perform_full_database_backup()
+    except Exception as e:
+        logging.getLogger(__name__).error(f"Initial startup backup failed: {e}")
+    asyncio.create_task(periodic_backup_loop())
+
 # Launch scheduled messages worker on startup
 @app.on_event("startup")
 async def start_scheduled_messages_worker():
@@ -2408,3 +2654,6 @@ async def start_scheduled_messages_worker():
 @app.on_event("shutdown")
 async def shutdown_db_client():
     client.close()
+
+if __name__ == "__main__":
+    uvicorn.run("server:app", host="0.0.0.0", port=8000, reload=True)

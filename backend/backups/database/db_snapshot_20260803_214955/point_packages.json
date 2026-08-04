@@ -1,0 +1,14 @@
+[
+  {
+    "_id": "6a5516ec1477cde06661e920",
+    "package_id": "pkg_recipient_1",
+    "name": "recipient_1",
+    "display_name": "Ek Alıcı Hakkı (+1)",
+    "points_cost": 400,
+    "description": "Listenize eklemek için 1 kişilik ekstra alıcı hakkı kazanır.",
+    "benefit": {
+      "type": "extra_recipients",
+      "value": 1
+    }
+  }
+]

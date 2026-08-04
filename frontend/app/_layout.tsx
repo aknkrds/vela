@@ -6,6 +6,7 @@ import { Asset } from 'expo-asset';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { SettingsProvider } from '@/src/contexts/SettingsContext';
 import { PinLockOverlay } from '@/src/components/PinLockOverlay';
+import { StatusBar } from 'expo-status-bar';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -28,6 +29,7 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
+      <StatusBar style="light" translucent={true} />
       <SettingsProvider>
         <AuthProvider>
           <Stack screenOptions={{ headerShown: false }}>

@@ -1,0 +1,45 @@
+[
+  {
+    "_id": "6a5a0159cde3951af03a14cc",
+    "ticket_id": "TKT-307567",
+    "user_id": "6a5a0159cde3951af03a14cb",
+    "name": "Support Tester",
+    "phone": "+905555555555",
+    "subject": "Bağlantı Sorunu",
+    "description": "Uygulama sunucuya bağlanırken hata alıyorum.",
+    "image_url": "/uploads/ticket_1784283481_ac8d2100.png",
+    "status": "closed",
+    "created_at": "2026-07-17T10:18:01.322000",
+    "updated_at": "2026-07-17T10:18:01.380000",
+    "messages": [
+      {
+        "message_id": "4bda46e9-3db6-4d7d-bf89-ac6e979cc68d",
+        "sender": "user",
+        "sender_name": "Support Tester",
+        "content": "Lütfen acil dönüş yapar mısınız?",
+        "created_at": "2026-07-17T10:18:01.363000"
+      },
+      {
+        "message_id": "a3214aa4-848b-43c2-944a-30782db7ba80",
+        "sender": "admin",
+        "sender_name": "Akin Admin",
+        "content": "Merhaba, sorununuzu inceliyoruz. Lütfen bekleyin.",
+        "created_at": "2026-07-17T10:18:01.372000"
+      }
+    ]
+  },
+  {
+    "_id": "6a5a02d9cde3951af03a14cd",
+    "ticket_id": "TKT-099780",
+    "user_id": "6a54bf6e250fd357493149aa",
+    "name": "Akin Admin",
+    "phone": "+905337328983",
+    "subject": "Deneme",
+    "description": "Deneme",
+    "image_url": null,
+    "status": "open",
+    "created_at": "2026-07-17T10:24:25.672000",
+    "updated_at": "2026-07-17T10:24:25.672000",
+    "messages": []
+  }
+]

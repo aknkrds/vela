@@ -1,0 +1,56 @@
+[
+  {
+    "_id": "6a54bba03b0d482e05d4f30b",
+    "user_id": "6a54bb53f07a5b6ca467dcf6",
+    "checkin_date": "2026-07-13T10:19:12.630000",
+    "status": "checked_in"
+  },
+  {
+    "_id": "6a54bdea3b0d482e05d4f30d",
+    "user_id": "6a54bb53f07a5b6ca467dcf6",
+    "checkin_date": "2026-07-13T10:28:58.915000",
+    "status": "checked_in"
+  },
+  {
+    "_id": "6a54bf9a7e08711453c7149d",
+    "user_id": "6a54bf6e250fd357493149aa",
+    "checkin_date": "2026-07-13T10:36:10.872000",
+    "status": "checked_in"
+  },
+  {
+    "_id": "6a54bfbf7e08711453c7149f",
+    "user_id": "6a54bf6e250fd357493149aa",
+    "checkin_date": "2026-07-13T10:36:47.952000",
+    "status": "checked_in"
+  },
+  {
+    "_id": "6a54c2983642d563ec070033",
+    "user_id": "6a54bf6e250fd357493149aa",
+    "checkin_date": "2026-07-13T10:48:56.909000",
+    "status": "checked_in"
+  },
+  {
+    "_id": "6a551792fb6cab1f603f63f6",
+    "user_id": "6a54be3b3b0d482e05d4f30e",
+    "checkin_date": "2026-07-13T16:51:30.128000",
+    "status": "checked_in"
+  },
+  {
+    "_id": "6a551926fb6cab1f603f63f7",
+    "user_id": "6a550c303642d563ec070034",
+    "checkin_date": "2026-07-13T16:58:14.867000",
+    "status": "checked_in"
+  },
+  {
+    "_id": "6a56819bb328867cdf7fa354",
+    "user_id": "6a54bf6e250fd357493149aa",
+    "checkin_date": "2026-07-14T18:36:11.679000",
+    "status": "checked_in"
+  },
+  {
+    "_id": "6a596e06b328867cdf7fa359",
+    "user_id": "6a54be3b3b0d482e05d4f30e",
+    "checkin_date": "2026-07-16T23:49:26.503000",
+    "status": "checked_in"
+  }
+]

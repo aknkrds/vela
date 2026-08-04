@@ -167,6 +167,7 @@ export const translations: Record<'en' | 'tr', Record<string, string>> = {
     adminPanelButton: "Admin Panel",
     logOutButton: "Log Out",
     neverExpiry: "Never",
+    lifetime: "Lifetime",
 
     // Admin Screen
     adminTitle: "Admin Panel",
@@ -488,6 +489,7 @@ export const translations: Record<'en' | 'tr', Record<string, string>> = {
     adminPanelButton: "Yönetici Paneli",
     logOutButton: "Çıkış Yap",
     neverExpiry: "Süresiz",
+    lifetime: "Ömür Boyu",
 
     // Admin Screen
     adminTitle: "Yönetici Paneli",

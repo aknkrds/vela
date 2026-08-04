@@ -20,6 +20,9 @@ import { useFocusEffect } from 'expo-router';
 import api from '@/src/api/client';
 import { encryptMessage, hashPassword } from '@/src/utils/encryption';
 import { COMFORT_BUTTON_HEIGHT, COMFORT_ICON_SIZE } from '@/src/utils/theme';
+import MediaRecorderModal from '@/src/components/MediaRecorderModal';
+import ViewMessageModal from '@/src/components/ViewMessageModal';
+import AdBanner from '@/src/components/AdBanner';
 
 interface Message {
   _id: string;
@@ -31,6 +34,8 @@ interface Message {
   scheduled_at?: string;
   delivery_channel?: string;
   status?: string;
+  encrypted_content?: string;
+  content?: string;
 }
 
 interface Recipient {
@@ -66,6 +71,16 @@ export default function Messages() {
   // Date & Time Picker Modal state
   const [showDatePickerModal, setShowDatePickerModal] = useState(false);
   const [showTimePickerModal, setShowTimePickerModal] = useState(false);
+  const [showRecorderModal, setShowRecorderModal] = useState(false);
+
+  // View Message Modal state
+  const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
+  const [showViewModal, setShowViewModal] = useState(false);
+
+  const handleOpenViewModal = (msg: Message) => {
+    setSelectedMessage(msg);
+    setShowViewModal(true);
+  };
 
   const currentYear = new Date().getFullYear();
   const yearsList = Array.from({ length: 20 }, (_, i) => currentYear + i);
@@ -292,6 +307,7 @@ export default function Messages() {
       </View>
 
       <ScrollView style={styles.content}>
+        <AdBanner placement="messages" />
         {messages.length === 0 ? (
           <View style={styles.emptyState}>
             <Ionicons name="mail-outline" size={comfortMode ? 80 : 64} color={colors.textMuted} />
@@ -300,7 +316,12 @@ export default function Messages() {
           </View>
         ) : (
           messages.map((message) => (
-            <View key={message._id} style={[styles.messageCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <TouchableOpacity
+              key={message._id}
+              style={[styles.messageCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
+              onPress={() => handleOpenViewModal(message)}
+              activeOpacity={0.7}
+            >
               <View style={styles.messageHeader}>
                 <View style={[styles.messageIconContainer, { backgroundColor: colors.accentDark }]}>
                   <Ionicons
@@ -342,7 +363,7 @@ export default function Messages() {
                   {new Date(message.created_at).toLocaleDateString()}
                 </Text>
               </View>
-            </View>
+            </TouchableOpacity>
           ))
         )}
       </ScrollView>
@@ -655,12 +676,31 @@ export default function Messages() {
                   textAlignVertical="top"
                 />
               ) : (
-                <View style={[styles.recordingPlaceholder, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                  <Ionicons name="mic" size={48} color={colors.textMuted} />
-                  <Text style={[styles.placeholderText, { fontSize: 14 * fontSizeScale, color: colors.textSecondary }]}>
-                    {messageType === 'audio' ? 'Audio' : 'Video'} recording will be available in the next update
+                <View style={[styles.recordingPlaceholder, { backgroundColor: colors.surface, borderColor: colors.border, padding: 20, alignItems: 'center' }]}>
+                  <Ionicons
+                    name={(messageType === 'audio' ? 'mic-circle' : 'videocam') as any}
+                    size={64}
+                    color={messageContent ? colors.success : colors.accent}
+                  />
+                  <Text style={[styles.placeholderText, { fontSize: 16 * fontSizeScale, color: colors.textPrimary, fontWeight: 'bold', marginVertical: 8, textAlign: 'center' }]}>
+                    {messageContent
+                      ? (messageType === 'audio' ? 'Ses Kaydı Alındı ✓' : 'Video Kaydı Alındı ✓')
+                      : (messageType === 'audio' ? 'Sesli Mesaj Kaydı Yapın (Maks 5 dk)' : 'Video Mesaj Kaydı (720P - Maks 5 dk)')}
                   </Text>
-                  <Text style={[styles.placeholderSubtext, { fontSize: 12 * fontSizeScale, color: colors.textMuted }]}>For now, please use text messages</Text>
+                  <TouchableOpacity
+                    style={{
+                      backgroundColor: messageContent ? colors.success : colors.accent,
+                      paddingVertical: 12,
+                      paddingHorizontal: 24,
+                      borderRadius: 12,
+                      marginTop: 8,
+                    }}
+                    onPress={() => setShowRecorderModal(true)}
+                  >
+                    <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 14 * fontSizeScale }}>
+                      {messageContent ? 'Tekrar Kaydet' : 'Kaydı Başlat'}
+                    </Text>
+                  </TouchableOpacity>
                 </View>
               )}
 
@@ -679,10 +719,10 @@ export default function Messages() {
                 style={[
                   styles.createButton,
                   { backgroundColor: colors.accent, height: btnHeight },
-                  (modalLoading || messageType !== 'text') && { backgroundColor: colors.badgeBg },
+                  modalLoading && { backgroundColor: colors.badgeBg },
                 ]}
                 onPress={handleCreateMessage}
-                disabled={modalLoading || messageType !== 'text'}
+                disabled={modalLoading}
               >
                 {modalLoading ? (
                   <ActivityIndicator color="#fff" />
@@ -691,9 +731,30 @@ export default function Messages() {
                 )}
               </TouchableOpacity>
             </ScrollView>
+
+            {/* Audio & Video Recorder Overlay inside Create Message Modal */}
+            <MediaRecorderModal
+              visible={showRecorderModal}
+              type={messageType === 'video' ? 'video' : 'audio'}
+              onClose={() => setShowRecorderModal(false)}
+              onRecordingComplete={(base64Payload) => {
+                setMessageContent(base64Payload);
+                Alert.alert('Başarılı', 'Medya kaydı tamamlandı ve şifreleme için hazırlandı.');
+              }}
+            />
           </View>
         </KeyboardAvoidingView>
       </Modal>
+
+      {/* View Message Detail & Decrypt Modal */}
+      <ViewMessageModal
+        visible={showViewModal}
+        message={selectedMessage}
+        onClose={() => {
+          setShowViewModal(false);
+          setSelectedMessage(null);
+        }}
+      />
     </SafeAreaView>
   );
 }
