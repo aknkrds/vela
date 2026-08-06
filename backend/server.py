@@ -1,7 +1,9 @@
 from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, Request, Header
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse, HTMLResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+import shutil
+import zipfile
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -95,12 +97,14 @@ class MongoJSONEncoder(json.JSONEncoder):
         return super().default(o)
 
 async def perform_full_database_backup() -> dict:
-    """Creates a complete JSON snapshot of all database collections in backups/database/."""
+    """Creates a complete JSON snapshot of all database collections and uploads directory, then archives to .zip."""
     try:
         now_str = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
-        snapshot_dir = BACKUP_DATABASE_DIR / f"db_snapshot_{now_str}"
+        snapshot_id = f"db_snapshot_{now_str}"
+        snapshot_dir = BACKUP_DATABASE_DIR / snapshot_id
         snapshot_dir.mkdir(parents=True, exist_ok=True)
         
+        # 1. Export all database collections to JSON
         collections = await db.list_collection_names()
         stats_summary = {}
         
@@ -109,17 +113,49 @@ async def perform_full_database_backup() -> dict:
             coll_file = snapshot_dir / f"{coll_name}.json"
             with open(coll_file, "w", encoding="utf-8") as f:
                 f.write(json.dumps(docs, cls=MongoJSONEncoder, ensure_ascii=False, indent=2))
-                
             stats_summary[coll_name] = len(docs)
-            
+
+        # 2. Copy uploads folder (audio, video, images, attachments) if present
+        uploads_backup_dir = snapshot_dir / "uploads"
+        media_files_count = 0
+        if UPLOAD_DIR.exists():
+            uploads_backup_dir.mkdir(parents=True, exist_ok=True)
+            for item in UPLOAD_DIR.rglob("*"):
+                if item.is_file():
+                    rel_path = item.relative_to(UPLOAD_DIR)
+                    dest_file = uploads_backup_dir / rel_path
+                    dest_file.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(item, dest_file)
+                    media_files_count += 1
+
+        # 3. Create zip archive
+        zip_path = BACKUP_DATABASE_DIR / f"{snapshot_id}.zip"
+        with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            for root, dirs, files in os.walk(snapshot_dir):
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    arcname = os.path.relpath(file_path, snapshot_dir)
+                    zipf.write(file_path, arcname)
+
+        zip_size_bytes = zip_path.stat().st_size if zip_path.exists() else 0
+        zip_size_mb = round(zip_size_bytes / (1024 * 1024), 2)
+
         backup_record = {
-            "snapshot_id": f"db_snapshot_{now_str}",
+            "snapshot_id": snapshot_id,
             "timestamp": datetime.utcnow().isoformat(),
             "collections": stats_summary,
-            "path": str(snapshot_dir)
+            "media_files_count": media_files_count,
+            "size_bytes": zip_size_bytes,
+            "size_mb": zip_size_mb,
+            "path": str(zip_path)
         }
-        await db.system_backups.insert_one(dict(backup_record))
-        logging.getLogger(__name__).info(f"Database backup completed successfully: db_snapshot_{now_str}")
+
+        # Store in DB without mutating ObjectId in returned dict
+        rec_to_insert = dict(backup_record)
+        res = await db.system_backups.insert_one(rec_to_insert)
+        backup_record["_id"] = str(res.inserted_id)
+
+        logging.getLogger(__name__).info(f"Full system backup (DB + Media) completed: {snapshot_id}")
         return backup_record
     except Exception as e:
         logging.getLogger(__name__).error(f"Error performing database backup: {e}")
@@ -1652,6 +1688,8 @@ async def update_subscription_plan(plan_id: str, plan_data: PlanUpdate, current_
         update_data["country_pricing"] = plan_data.country_pricing
     if plan_data.payment_methods is not None:
         update_data["payment_methods"] = plan_data.payment_methods
+    if plan_data.billing_cycle is not None:
+        update_data["billing_cycle"] = plan_data.billing_cycle
         
     if not update_data:
         raise HTTPException(status_code=400, detail="No fields to update")
@@ -2625,6 +2663,44 @@ async def trigger_manual_backup(current_user: dict = Depends(get_current_user)):
         "message": "Full database and media snapshot created successfully",
         "backup_data": res
     }
+
+@api_router.get("/admin/backups/download/{snapshot_id}")
+async def download_backup(snapshot_id: str, token: Optional[str] = None, authorization: Optional[str] = Header(None)):
+    """Admin endpoint to download a zip snapshot backup file."""
+    auth_token = None
+    if authorization and authorization.startswith("Bearer "):
+        auth_token = authorization.replace("Bearer ", "").strip()
+    elif token:
+        auth_token = token
+        
+    if not auth_token:
+        raise HTTPException(status_code=401, detail="Missing authentication token")
+        
+    user = None
+    session = await db.user_sessions.find_one({"session_token": auth_token})
+    if session:
+        user = await db.users.find_one({"user_id": session["user_id"]})
+    if not user:
+        try:
+            payload = jwt.decode(auth_token, SECRET_KEY, algorithms=[ALGORITHM])
+            email = payload.get("sub")
+            if email:
+                user = await db.users.find_one({"email": email})
+        except Exception:
+            pass
+
+    if not user or (user.get("role") != "admin" and not user.get("is_admin")):
+        raise HTTPException(status_code=403, detail="Admin privileges required")
+        
+    zip_path = BACKUP_DATABASE_DIR / f"{snapshot_id}.zip"
+    if not zip_path.exists():
+        raise HTTPException(status_code=404, detail="Backup zip file not found")
+        
+    return FileResponse(
+        path=str(zip_path),
+        filename=f"{snapshot_id}.zip",
+        media_type="application/zip"
+    )
 
 async def periodic_backup_loop():
     """Runs an automatic database snapshot backup every 24 hours."""

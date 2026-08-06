@@ -5,8 +5,6 @@ const crypto = require("crypto");
 const RULES_PATH = process.env.CMD_GUARD_RULES || "/opt/install-guard/rules.json";
 
 const DEFAULT_LIST = {
-  "yarn add ** expo-av* **": { allowed: false, reason: "expo-av is deprecated", alternate: "expo-audio / expo-video" },
-  "yarn expo install ** expo-av* **": { allowed: false, reason: "expo-av is deprecated", alternate: "expo-audio / expo-video" },
   "yarn add ** expo-barcode-scanner* **": { allowed: false, reason: "deprecated", alternate: "expo-camera" },
   "yarn expo install ** expo-barcode-scanner* **": { allowed: false, reason: "deprecated", alternate: "expo-camera" },
   "yarn add ** expo-background-fetch* **": { allowed: false, reason: "deprecated", alternate: "expo-background-task" },

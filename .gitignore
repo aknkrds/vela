@@ -69,4 +69,6 @@ venv/
 memory/test_credentials.md
 android-sdk/
 backend/logs/
+backend/backups/
+backend/uploads/
 *.log

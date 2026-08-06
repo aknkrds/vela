@@ -908,6 +908,15 @@
 
             <!-- PANEL: SUBSCRIPTION PLANS -->
             <div id="panel-plans" class="tab-panel">
+                <div class="filter-panel" style="justify-content: space-between; margin-bottom: 20px; align-items: center;">
+                    <div>
+                        <h3 style="font-size: 18px; font-weight: 700; color: var(--text-primary);">Abonelik Paketleri & Fiyatlandırma</h3>
+                        <p style="font-size: 13px; color: var(--text-muted); margin-top: 2px;">Uygulama genelinde geçerli paketleri, fiyatları ve kullanıcı limitlerini yönetin.</p>
+                    </div>
+                    <button class="btn-primary" onclick="openPlanModal()" style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 8px; font-weight: 600;">
+                        <i data-lucide="plus-circle"></i> Yeni Paket Ekle
+                    </button>
+                </div>
                 <div class="stats-grid" id="plans-container">
                     <!-- JS Filled -->
                 </div>
@@ -979,7 +988,8 @@
                                 <th>Snapshot ID</th>
                                 <th>Tarih / Saat</th>
                                 <th>Koleksiyon İstatistikleri</th>
-                                <th>Yedek Dizini</th>
+                                <th>Yedek Boyutu</th>
+                                <th>İndir</th>
                             </tr>
                         </thead>
                         <tbody id="backups-table-body">
@@ -1133,6 +1143,86 @@
                 </div>
                 <div class="btn-group">
                     <button type="button" class="btn-secondary btn-block" onclick="closeModal('modal-staff-edit')">İptal</button>
+                    <button type="submit" class="btn-primary btn-block">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: ADD/EDIT SUBSCRIPTION PLAN -->
+    <div class="modal" id="modal-plan-edit">
+        <div class="modal-content" style="max-width: 550px; width: 90%;">
+            <div class="modal-header">
+                <h3 class="modal-title" id="plan-modal-title">Abonelik Paketi Düzenle</h3>
+                <button class="modal-close" onclick="closePlanModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <form id="plan-form" onsubmit="savePlan(event)">
+                <input type="hidden" id="plan-id">
+                
+                <div style="display: flex; gap: 12px;">
+                    <div class="input-group" style="flex: 1;">
+                        <label>Sistem Kodu (Örn: galaxy, lunar)</label>
+                        <input type="text" id="plan-name" class="input-field" required placeholder="galaxy">
+                    </div>
+                    <div class="input-group" style="flex: 1;">
+                        <label>Görünür İsim (Örn: Galaxy VIP)</label>
+                        <input type="text" id="plan-display-name" class="input-field" required placeholder="Galaxy VIP Paket">
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 12px;">
+                    <div class="input-group" style="flex: 1;">
+                        <label>Fiyat ($ veya ₺)</label>
+                        <input type="number" step="0.01" id="plan-price" class="input-field" required value="0">
+                    </div>
+                    <div class="input-group" style="flex: 1;">
+                        <label>Faturalandırma Dönemi</label>
+                        <select id="plan-billing-cycle" class="input-field" style="height: 42px;">
+                            <option value="yearly">Yıllık</option>
+                            <option value="monthly">Aylık</option>
+                            <option value="lifetime">Ömür Boyu</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 12px;">
+                    <div class="input-group" style="flex: 1;">
+                        <label>Maksimum Alıcı Limiti</label>
+                        <input type="number" id="plan-max-recipients" class="input-field" required value="10">
+                    </div>
+                    <div class="input-group" style="flex: 1;">
+                        <label>Maksimum Mesaj Limiti</label>
+                        <input type="number" id="plan-max-messages" class="input-field" required value="100">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>İzin Verilen Mesaj Tipleri</label>
+                    <div style="display: flex; gap: 16px; margin-top: 6px; flex-wrap: wrap;">
+                        <label style="display: flex; align-items: center; gap: 6px; font-size: 14px;">
+                            <input type="checkbox" id="plan-type-text" value="text" checked> Yazılı
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 6px; font-size: 14px;">
+                            <input type="checkbox" id="plan-type-audio" value="audio" checked> Sesli
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 6px; font-size: 14px;">
+                            <input type="checkbox" id="plan-type-video" value="video" checked> Görüntülü
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 6px; font-size: 14px;">
+                            <input type="checkbox" id="plan-type-photo" value="photo" checked> Fotoğraf
+                        </label>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Özellikler Listesi (Virgülle ayırın)</label>
+                    <textarea id="plan-features" class="input-field" rows="3" placeholder="Sınırsız Mesajlaşma, Sesli Mesaj, Görüntülü Mesaj, Öncelikli Destek" style="height: auto; resize: vertical; padding: 10px;"></textarea>
+                </div>
+
+                <div class="btn-group">
+                    <button type="button" class="btn-secondary btn-block" onclick="closePlanModal()">İptal</button>
                     <button type="submit" class="btn-primary btn-block">Kaydet</button>
                 </div>
             </form>
@@ -1712,36 +1802,190 @@
         };
 
         // 4. SUBSCRIPTION PLANS TAB
+        let allPlans = [];
         async function loadPlans() {
             try {
                 const res = await fetch(`${API_URL}/admin/plans`, { headers: { "Authorization": `Bearer ${token}` } });
-                const list = await res.json();
+                allPlans = await res.json();
                 
                 const container = document.getElementById("plans-container");
                 container.innerHTML = "";
                 
-                list.forEach(p => {
+                allPlans.forEach(p => {
                     const card = document.createElement("div");
                     card.className = "stat-card";
                     card.style.flexDirection = "column";
                     card.style.alignItems = "stretch";
                     card.style.gap = "12px";
                     
+                    const cycleText = p.billing_cycle === 'lifetime' ? 'Ömür Boyu' : (p.billing_cycle === 'monthly' ? 'Aylık' : 'Yıllık');
+                    const allowedStr = (p.allowed_types || []).join(", ") || "Hepsi";
+                    const isFree = p.name === 'free';
+                    
                     card.innerHTML = `
                         <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <h4 style="font-size: 16px; font-weight:700; color: var(--primary);">${p.display_name}</h4>
-                            <span style="font-size: 14px; font-weight:800;">$${p.price} / ${p.billing_cycle === 'lifetime' ? 'Ömür Boyu' : 'Yıllık'}</span>
+                            <div>
+                                <h4 style="font-size: 16px; font-weight:700; color: var(--primary);">${p.display_name}</h4>
+                                <span style="font-size: 11px; color: var(--text-muted);">Kod: <code>${p.name}</code></span>
+                            </div>
+                            <span style="font-size: 15px; font-weight:800; color: var(--success);">$${p.price} / ${cycleText}</span>
                         </div>
-                        <p style="font-size: 12px; color: var(--text-muted);">${p.features.join(", ")}</p>
-                        <div style="display:flex; gap: 8px; font-size:12px; color: var(--text-muted);">
+                        <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.4;">${(p.features || []).join(", ") || "Özellik tanımı yok."}</p>
+                        <div style="display:flex; justify-content:space-between; font-size:12px; color: var(--text-muted); background: var(--surface); padding: 8px 12px; border-radius: 6px;">
                             <span>Maks Alıcı: <strong>${p.max_recipients}</strong></span>
                             <span>Maks Mesaj: <strong>${p.max_messages}</strong></span>
+                            <span>Mesaj Tipleri: <strong>${allowedStr}</strong></span>
+                        </div>
+                        <div style="display:flex; justify-content:flex-end; gap: 8px; margin-top: 4px;">
+                            <button class="btn-secondary" style="padding: 6px 12px; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;" onclick="openPlanModal('${p._id}')">
+                                <i data-lucide="edit-3"></i> Düzenle
+                            </button>
+                            ${!isFree ? `
+                                <button class="btn-danger" style="padding: 6px 12px; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;" onclick="deletePlan('${p._id}')">
+                                    <i data-lucide="trash-2"></i> Sil
+                                </button>
+                            ` : ''}
                         </div>
                     `;
                     container.appendChild(card);
                 });
+                if (typeof lucide !== "undefined") lucide.createIcons();
             } catch (err) {
                 console.error("Error loading plans:", err);
+            }
+        }
+
+        function openPlanModal(planId = null) {
+            const modal = document.getElementById("modal-plan-edit");
+            const title = document.getElementById("plan-modal-title");
+            
+            if (planId) {
+                const plan = allPlans.find(p => p._id === planId);
+                if (!plan) return;
+                title.innerText = `Paket Düzenle: ${plan.display_name}`;
+                document.getElementById("plan-id").value = plan._id;
+                document.getElementById("plan-name").value = plan.name || '';
+                document.getElementById("plan-name").disabled = true;
+                document.getElementById("plan-display-name").value = plan.display_name || '';
+                document.getElementById("plan-price").value = plan.price !== undefined ? plan.price : 0;
+                document.getElementById("plan-billing-cycle").value = plan.billing_cycle || 'yearly';
+                document.getElementById("plan-max-recipients").value = plan.max_recipients !== undefined ? plan.max_recipients : 10;
+                document.getElementById("plan-max-messages").value = plan.max_messages !== undefined ? plan.max_messages : 100;
+                
+                const allowed = plan.allowed_types || ['text', 'audio', 'video', 'photo'];
+                document.getElementById("plan-type-text").checked = allowed.includes('text');
+                document.getElementById("plan-type-audio").checked = allowed.includes('audio');
+                document.getElementById("plan-type-video").checked = allowed.includes('video');
+                document.getElementById("plan-type-photo").checked = allowed.includes('photo');
+
+                document.getElementById("plan-features").value = (plan.features || []).join(", ");
+            } else {
+                title.innerText = "Yeni Abonelik Paketi Ekle";
+                document.getElementById("plan-id").value = '';
+                document.getElementById("plan-name").value = '';
+                document.getElementById("plan-name").disabled = false;
+                document.getElementById("plan-display-name").value = '';
+                document.getElementById("plan-price").value = '9.99';
+                document.getElementById("plan-billing-cycle").value = 'yearly';
+                document.getElementById("plan-max-recipients").value = '10';
+                document.getElementById("plan-max-messages").value = '100';
+                
+                document.getElementById("plan-type-text").checked = true;
+                document.getElementById("plan-type-audio").checked = true;
+                document.getElementById("plan-type-video").checked = true;
+                document.getElementById("plan-type-photo").checked = true;
+                document.getElementById("plan-features").value = 'Yazılı Mesaj, Sesli Mesaj, Görüntülü Mesaj';
+            }
+            
+            modal.classList.add("active");
+            if (typeof lucide !== "undefined") lucide.createIcons();
+        }
+
+        function closePlanModal() {
+            document.getElementById("modal-plan-edit").classList.remove("active");
+        }
+
+        async function savePlan(e) {
+            e.preventDefault();
+            const planId = document.getElementById("plan-id").value;
+            const name = document.getElementById("plan-name").value.trim().toLowerCase();
+            const display_name = document.getElementById("plan-display-name").value.trim();
+            const price = parseFloat(document.getElementById("plan-price").value) || 0;
+            const billing_cycle = document.getElementById("plan-billing-cycle").value;
+            const max_recipients = parseInt(document.getElementById("plan-max-recipients").value) || 0;
+            const max_messages = parseInt(document.getElementById("plan-max-messages").value) || 0;
+            
+            const allowed_types = [];
+            if (document.getElementById("plan-type-text").checked) allowed_types.push("text");
+            if (document.getElementById("plan-type-audio").checked) allowed_types.push("audio");
+            if (document.getElementById("plan-type-video").checked) allowed_types.push("video");
+            if (document.getElementById("plan-type-photo").checked) allowed_types.push("photo");
+
+            const featuresStr = document.getElementById("plan-features").value;
+            const features = featuresStr.split(",").map(s => s.trim()).filter(Boolean);
+
+            const payload = {
+                display_name,
+                price,
+                billing_cycle,
+                max_recipients,
+                max_messages,
+                allowed_types,
+                features
+            };
+
+            try {
+                let res;
+                if (planId) {
+                    res = await fetch(`${API_URL}/admin/plans/${planId}`, {
+                        method: "PUT",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "Authorization": `Bearer ${token}`
+                        },
+                        body: JSON.stringify(payload)
+                    });
+                } else {
+                    payload.name = name;
+                    res = await fetch(`${API_URL}/admin/plans`, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "Authorization": `Bearer ${token}`
+                        },
+                        body: JSON.stringify(payload)
+                    });
+                }
+
+                if (res.ok) {
+                    closePlanModal();
+                    alert("Abonelik paketi başarıyla kaydedildi.");
+                    loadPlans();
+                } else {
+                    const data = await res.json();
+                    alert("Hata: " + (data.detail || "İşlem gerçekleştirilemedi."));
+                }
+            } catch (err) {
+                alert("Ağ hatası oluştu.");
+            }
+        }
+
+        async function deletePlan(planId) {
+            if (!confirm("Bu abonelik paketini silmek istediğinize emin misiniz?")) return;
+            try {
+                const res = await fetch(`${API_URL}/admin/plans/${planId}`, {
+                    method: "DELETE",
+                    headers: { "Authorization": `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    alert("Paket başarıyla silindi.");
+                    loadPlans();
+                } else {
+                    const data = await res.json();
+                    alert("Hata: " + (data.detail || "Paket silinemedi."));
+                }
+            } catch (err) {
+                alert("Ağ hatası oluştu.");
             }
         }
 
@@ -2097,7 +2341,7 @@
                     tbody.innerHTML = "";
 
                     if (!data.db_snapshots || data.db_snapshots.length === 0) {
-                        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 20px; color: var(--text-muted);">Henüz veritabanı snapshot yedeği bulunmuyor.</td></tr>`;
+                        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 20px; color: var(--text-muted);">Henüz veritabanı snapshot yedeği bulunmuyor.</td></tr>`;
                         return;
                     }
 
@@ -2107,15 +2351,22 @@
                             ? Object.entries(snapshot.collections).map(([k, v]) => `${k}: ${v}`).join(", ")
                             : "Veri yok";
                         const dateStr = snapshot.timestamp ? new Date(snapshot.timestamp).toLocaleString("tr-TR") : "-";
+                        const sizeDisplay = snapshot.size_mb !== undefined ? `${snapshot.size_mb} MB` : (snapshot.total_size_mb ? `${snapshot.total_size_mb} MB` : '-');
 
                         tr.innerHTML = `
                             <td><strong style="color: var(--primary);">${snapshot.snapshot_id || "-"}</strong></td>
                             <td>${dateStr}</td>
                             <td><span style="font-size: 12px; color: var(--text-secondary);">${collSummary}</span></td>
-                            <td><code style="background: var(--surface); padding: 2px 6px; border-radius: 4px; font-size: 11px;">${snapshot.path || "-"}</code></td>
+                            <td><span style="font-size: 12px; font-weight: 600; color: var(--text-primary);">${sizeDisplay}</span></td>
+                            <td>
+                                <a href="${API_URL}/admin/backups/download/${snapshot.snapshot_id}?token=${token}" target="_blank" class="btn-primary" style="padding: 6px 12px; font-size: 12px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; border-radius: 6px; font-weight: 600;">
+                                    <i data-lucide="download"></i> İndir (.zip)
+                                </a>
+                            </td>
                         `;
                         tbody.appendChild(tr);
                     });
+                    if (typeof lucide !== "undefined") lucide.createIcons();
                 }
             } catch (err) {
                 console.error("Error loading backups:", err);
@@ -2137,10 +2388,11 @@
                     alert("Tam sistem yedeği (Veritabanı + Medya) başarıyla oluşturuldu.");
                     loadBackups();
                 } else {
-                    alert("Yedekleme sırasında bir hata oluştu.");
+                    const errData = await res.json().catch(() => ({}));
+                    alert("Yedekleme sırasında bir hata oluştu: " + (errData.detail || "Bilinmeyen hata"));
                 }
             } catch (err) {
-                alert("Ağ hatası.");
+                alert("Ağ hatası oluştu.");
             } finally {
                 if (btn) {
                     btn.disabled = false;
