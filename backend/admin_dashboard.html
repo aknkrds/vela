@@ -924,8 +924,14 @@
 
             <!-- PANEL: POINT SHOP -->
             <div id="panel-packages" class="tab-panel">
-                <div class="filter-panel" style="justify-content: space-between;">
-                    <h3 style="font-size: 18px;">Ek Puan Paketleri</h3>
+                <div class="filter-panel" style="justify-content: space-between; margin-bottom: 20px; align-items: center;">
+                    <div>
+                        <h3 style="font-size: 18px; font-weight: 700; color: var(--text-primary);">Ek Puan Mağazası Paketleri</h3>
+                        <p style="font-size: 13px; color: var(--text-muted); margin-top: 2px;">Kullanıcıların SYMI Puanı ile satın alabileceği paketleri ve otomatik faydaları (üst pakete geçiş, ek alıcı hakkı vb.) yönetin.</p>
+                    </div>
+                    <button class="btn-primary" onclick="openPackageModal()" style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 8px; font-weight: 600;">
+                        <i data-lucide="plus-circle"></i> Yeni Puan Paketi Ekle
+                    </button>
                 </div>
                 <div class="stats-grid" id="packages-container">
                     <!-- JS Filled -->
@@ -1223,6 +1229,64 @@
 
                 <div class="btn-group">
                     <button type="button" class="btn-secondary btn-block" onclick="closePlanModal()">İptal</button>
+                    <button type="submit" class="btn-primary btn-block">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: ADD/EDIT POINT SHOP PACKAGE -->
+    <div class="modal" id="modal-package-edit">
+        <div class="modal-content" style="max-width: 550px; width: 90%;">
+            <div class="modal-header">
+                <h3 class="modal-title" id="package-modal-title">Puan Mağazası Paketi Düzenle</h3>
+                <button class="modal-close" onclick="closePackageModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <form id="package-form" onsubmit="savePackage(event)">
+                <input type="hidden" id="pkg-id">
+                
+                <div style="display: flex; gap: 12px;">
+                    <div class="input-group" style="flex: 1;">
+                        <label>Sistem Kodu (Örn: next_tier_boost)</label>
+                        <input type="text" id="pkg-name" class="input-field" required placeholder="next_tier_boost">
+                    </div>
+                    <div class="input-group" style="flex: 1;">
+                        <label>Görünür Adı (Örn: 1 Üst Pakete Geçiş)</label>
+                        <input type="text" id="pkg-display-name" class="input-field" required placeholder="1 Üst Pakete Geçiş">
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 12px;">
+                    <div class="input-group" style="flex: 1;">
+                        <label>Gerekli Puan Tutarı</label>
+                        <input type="number" id="pkg-points-cost" class="input-field" required value="400" min="1">
+                    </div>
+                    <div class="input-group" style="flex: 1;">
+                        <label>Fayda Türü (Sistem Aksiyonu)</label>
+                        <select id="pkg-benefit-type" class="input-field" style="height: 42px;">
+                            <option value="next_tier">Bir Üst Pakete Yükselt (FREE -> BASIC -> SILVER...)</option>
+                            <option value="extra_recipients">Ek Alıcı Hakkı (+N)</option>
+                            <option value="extra_messages">Ek Mesaj Hakkı (+N)</option>
+                            <option value="specific_tier">Belirli Bir Pakete Ata (GALAXY vb.)</option>
+                            <option value="extend_subscription">Abonelik Süresini Uzat (+N Gün)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Fayda Değeri / Sayısı (Örn: +1 alıcı için 1, veya belirli paket adı)</label>
+                    <input type="text" id="pkg-benefit-value" class="input-field" required value="1" placeholder="1 veya galaxy">
+                </div>
+
+                <div class="input-group">
+                    <label>Açıklama</label>
+                    <textarea id="pkg-description" class="input-field" rows="3" placeholder="400 SYMI Puan karşılığında hesabınızı otomatik olarak 1 üst kademeye yükseltir." style="height: auto; resize: vertical; padding: 10px;"></textarea>
+                </div>
+
+                <div class="btn-group">
+                    <button type="button" class="btn-secondary btn-block" onclick="closePackageModal()">İptal</button>
                     <button type="submit" class="btn-primary btn-block">Kaydet</button>
                 </div>
             </form>
@@ -1992,36 +2056,188 @@
         }
 
         // 5. PACKAGES TAB
+        let allPackages = [];
         async function loadPackages() {
             try {
                 const res = await fetch(`${API_URL}/packages`, { headers: { "Authorization": `Bearer ${token}` } });
-                const list = await res.json();
+                allPackages = await res.json();
                 
                 const container = document.getElementById("packages-container");
                 container.innerHTML = "";
                 
-                list.forEach(pkg => {
+                allPackages.forEach(pkg => {
                     const card = document.createElement("div");
                     card.className = "stat-card";
                     card.style.flexDirection = "column";
                     card.style.alignItems = "stretch";
                     card.style.gap = "12px";
                     
+                    const benefitType = (pkg.benefit ? pkg.benefit.type : pkg.benefit_type) || "next_tier";
+                    const benefitValue = (pkg.benefit ? pkg.benefit.value : pkg.benefit_value) !== undefined ? (pkg.benefit ? pkg.benefit.value : pkg.benefit_value) : "1";
+                    
+                    let benefitDesc = "";
+                    if (benefitType === "next_tier" || benefitType === "upgrade_tier") {
+                        benefitDesc = "⚡ Otomatik 1 Üst Kademeye Yükseltir (FREE -> BASIC...)";
+                    } else if (benefitType === "extra_recipients" || benefitType === "extra_recipient") {
+                        benefitDesc = `➕ Ek +${benefitValue} Alıcı Hakkı Tanımlar`;
+                    } else if (benefitType === "extra_messages") {
+                        benefitDesc = `✉️ Ek +${benefitValue} Mesaj Hakkı Tanımlar`;
+                    } else if (benefitType === "specific_tier") {
+                        benefitDesc = `⭐ Doğrudan Pakete Yükseltir (${String(benefitValue).toUpperCase()})`;
+                    } else if (benefitType === "extend_subscription") {
+                        benefitDesc = `📅 Abonelik Süresini +${benefitValue} Gün Uzatır`;
+                    } else {
+                        benefitDesc = `${String(benefitType).toUpperCase()}: ${benefitValue}`;
+                    }
+
+                    const pkgId = pkg.package_id || pkg._id;
+                    
                     card.innerHTML = `
                         <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <h4 style="font-size: 16px; font-weight:700; color: var(--success);">${pkg.display_name}</h4>
-                            <span style="font-size: 14px; font-weight:800; color: var(--warning);">${pkg.points_cost} Puan</span>
+                            <div>
+                                <h4 style="font-size: 16px; font-weight:700; color: var(--success);">${pkg.display_name}</h4>
+                                <span style="font-size: 11px; color: var(--text-muted);">Kod: <code>${pkgId}</code></span>
+                            </div>
+                            <span style="font-size: 15px; font-weight:800; color: var(--warning);">${pkg.points_cost} Puan</span>
                         </div>
-                        <p style="font-size: 12px; color: var(--text-muted);">${pkg.description || 'Ek paket açıklaması yok.'}</p>
-                        <div style="font-size:12px; color: var(--text-muted);">
-                            <span>Tip: <strong>${pkg.benefit_type.toUpperCase()}</strong></span> | 
-                            <span>Değer: <strong>+${pkg.benefit_value}</strong></span>
+                        <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.4;">${pkg.description || 'Ek paket açıklaması yok.'}</p>
+                        <div style="font-size:12px; color: var(--primary); background: var(--surface); padding: 8px 12px; border-radius: 6px; font-weight: 600;">
+                            ${benefitDesc}
+                        </div>
+                        <div style="display:flex; justify-content:flex-end; gap: 8px; margin-top: 4px;">
+                            <button class="btn-secondary" style="padding: 6px 12px; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;" onclick="openPackageModal('${pkgId}')">
+                                <i data-lucide="edit-3"></i> Düzenle
+                            </button>
+                            <button class="btn-danger" style="padding: 6px 12px; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;" onclick="deletePackage('${pkgId}')">
+                                <i data-lucide="trash-2"></i> Sil
+                            </button>
                         </div>
                     `;
                     container.appendChild(card);
                 });
+                if (typeof lucide !== "undefined") lucide.createIcons();
             } catch (err) {
                 console.error("Error loading packages:", err);
+            }
+        }
+
+        function openPackageModal(packageId = null) {
+            const modal = document.getElementById("modal-package-edit");
+            const title = document.getElementById("package-modal-title");
+            if (!modal) return;
+
+            if (packageId) {
+                const pkg = allPackages.find(p => String(p.package_id) === String(packageId) || String(p._id) === String(packageId));
+                if (!pkg) return;
+
+                title.innerText = `Puan Paketi Düzenle: ${pkg.display_name}`;
+                document.getElementById("pkg-id").value = pkg.package_id || pkg._id;
+                document.getElementById("pkg-name").value = pkg.name || pkg.package_id || '';
+                document.getElementById("pkg-name").disabled = true;
+                document.getElementById("pkg-display-name").value = pkg.display_name || '';
+                document.getElementById("pkg-points-cost").value = pkg.points_cost !== undefined ? pkg.points_cost : 400;
+                
+                const bType = (pkg.benefit ? pkg.benefit.type : pkg.benefit_type) || "next_tier";
+                const bVal = (pkg.benefit ? pkg.benefit.value : pkg.benefit_value) !== undefined ? (pkg.benefit ? pkg.benefit.value : pkg.benefit_value) : 1;
+                
+                document.getElementById("pkg-benefit-type").value = bType;
+                document.getElementById("pkg-benefit-value").value = bVal;
+                document.getElementById("pkg-description").value = pkg.description || '';
+            } else {
+                title.innerText = "Yeni Puan Paketi Ekle";
+                document.getElementById("pkg-id").value = '';
+                document.getElementById("pkg-name").value = '';
+                document.getElementById("pkg-name").disabled = false;
+                document.getElementById("pkg-display-name").value = '';
+                document.getElementById("pkg-points-cost").value = '400';
+                document.getElementById("pkg-benefit-type").value = 'next_tier';
+                document.getElementById("pkg-benefit-value").value = '1';
+                document.getElementById("pkg-description").value = '400 SYMI Puan karşılığında hesabınızı otomatik olarak 1 üst kademeye yükseltir.';
+            }
+
+            modal.classList.add("open");
+            if (typeof lucide !== "undefined") lucide.createIcons();
+        }
+
+        function closePackageModal() {
+            const modal = document.getElementById("modal-package-edit");
+            if (modal) modal.classList.remove("open");
+        }
+
+        async function savePackage(e) {
+            e.preventDefault();
+            const pkgId = document.getElementById("pkg-id").value;
+            const name = document.getElementById("pkg-name").value.trim().toLowerCase();
+            const display_name = document.getElementById("pkg-display-name").value.trim();
+            const points_cost = parseInt(document.getElementById("pkg-points-cost").value) || 100;
+            const benefit_type = document.getElementById("pkg-benefit-type").value;
+            let benefit_value = document.getElementById("pkg-benefit-value").value.trim();
+            const description = document.getElementById("pkg-description").value.trim();
+
+            if (!isNaN(benefit_value) && benefit_value !== "") {
+                benefit_value = Number(benefit_value);
+            }
+
+            const payload = {
+                display_name,
+                points_cost,
+                benefit_type,
+                benefit_value,
+                description
+            };
+
+            try {
+                let res;
+                if (pkgId) {
+                    res = await fetch(`${API_URL}/admin/packages/${pkgId}`, {
+                        method: "PUT",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "Authorization": `Bearer ${token}`
+                        },
+                        body: JSON.stringify(payload)
+                    });
+                } else {
+                    payload.name = name;
+                    res = await fetch(`${API_URL}/admin/packages`, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "Authorization": `Bearer ${token}`
+                        },
+                        body: JSON.stringify(payload)
+                    });
+                }
+
+                if (res.ok) {
+                    closePackageModal();
+                    alert("Puan paketi başarıyla kaydedildi.");
+                    loadPackages();
+                } else {
+                    const data = await res.json();
+                    alert("Hata: " + (data.detail || "Paket kaydedilemedi."));
+                }
+            } catch (err) {
+                alert("Ağ hatası oluştu.");
+            }
+        }
+
+        async function deletePackage(pkgId) {
+            if (!confirm("Bu puan paketini silmek istediğinize emin misiniz?")) return;
+            try {
+                const res = await fetch(`${API_URL}/admin/packages/${pkgId}`, {
+                    method: "DELETE",
+                    headers: { "Authorization": `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    alert("Puan paketi başarıyla silindi.");
+                    loadPackages();
+                } else {
+                    const data = await res.json();
+                    alert("Hata: " + (data.detail || "Paket silinemedi."));
+                }
+            } catch (err) {
+                alert("Ağ hatası oluştu.");
             }
         }
 

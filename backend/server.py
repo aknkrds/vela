@@ -492,19 +492,23 @@ class ValidatePromoRequest(BaseModel):
     code: str
 
 # New Pydantic Models for Points & Referrals
+from typing import Any
+
 class PackageCreate(BaseModel):
     name: str
     display_name: str
     points_cost: int
     description: str
     benefit_type: str
-    benefit_value: int
+    benefit_value: Any = 1
 
 class PackageUpdate(BaseModel):
+    name: Optional[str] = None
     display_name: Optional[str] = None
     points_cost: Optional[int] = None
     description: Optional[str] = None
-    benefit_value: Optional[int] = None
+    benefit_type: Optional[str] = None
+    benefit_value: Optional[Any] = None
 
 class SubmitReferralRequest(BaseModel):
     referral_code: str
@@ -1824,9 +1828,17 @@ async def get_packages():
 class PurchasePackageRequest(BaseModel):
     package_id: str
 
+TIER_PROGRESSION = ["free", "basic", "silver", "gold", "diamond", "blue_diamond", "platinum", "galaxy"]
+
 @api_router.post("/packages/purchase")
 async def purchase_package(req: PurchasePackageRequest, current_user: dict = Depends(get_current_user)):
     pkg = await db.point_packages.find_one({"package_id": req.package_id})
+    if not pkg:
+        try:
+            pkg = await db.point_packages.find_one({"_id": ObjectId(req.package_id)})
+        except Exception:
+            pass
+            
     if not pkg:
         raise HTTPException(status_code=404, detail="Paket bulunamadı")
     
@@ -1834,19 +1846,82 @@ async def purchase_package(req: PurchasePackageRequest, current_user: dict = Dep
     if user_points < pkg["points_cost"]:
         raise HTTPException(status_code=400, detail="Yetersiz SYMI puanı")
     
-    # Deduct points and apply benefit
+    # Extract benefit info
     benefit = pkg.get("benefit", {})
-    benefit_type = benefit.get("type")
-    benefit_val = benefit.get("value", 0)
+    benefit_type = benefit.get("type") or pkg.get("benefit_type")
+    benefit_val = benefit.get("value") if benefit.get("value") is not None else pkg.get("benefit_value", 1)
     
     update_dict = {
-        "$inc": {"symi_points": -pkg["points_cost"]}
+        "$inc": {"symi_points": -pkg["points_cost"]},
+        "$set": {"updated_at": datetime.utcnow()}
     }
-    if benefit_type == "extra_recipients":
-        update_dict["$inc"]["extra_recipients"] = benefit_val
+    
+    current_tier = (current_user.get("subscription_tier") or "free").lower()
+
+    if benefit_type in ["extra_recipients", "extra_recipient"]:
+        try:
+            val = int(benefit_val)
+        except Exception:
+            val = 1
+        update_dict["$inc"]["extra_recipients"] = val
         
+    elif benefit_type in ["extra_messages", "extra_message"]:
+        try:
+            val = int(benefit_val)
+        except Exception:
+            val = 10
+        update_dict["$inc"]["extra_messages"] = val
+
+    elif benefit_type in ["next_tier", "upgrade_tier", "tier_upgrade"]:
+        # Find next tier in TIER_PROGRESSION
+        try:
+            curr_idx = TIER_PROGRESSION.index(current_tier)
+        except ValueError:
+            curr_idx = 0
+            
+        next_idx = min(curr_idx + 1, len(TIER_PROGRESSION) - 1)
+        next_tier = TIER_PROGRESSION[next_idx]
+        
+        update_dict["$set"]["subscription_tier"] = next_tier
+        update_dict["$set"]["subscription_status"] = "active"
+
+    elif benefit_type in ["specific_tier", "target_tier", "set_tier"]:
+        target_tier = str(benefit_val).lower()
+        if target_tier in TIER_PROGRESSION:
+            update_dict["$set"]["subscription_tier"] = target_tier
+            update_dict["$set"]["subscription_status"] = "active"
+
+    elif benefit_type == "extend_subscription":
+        try:
+            days = int(benefit_val)
+        except Exception:
+            days = 30
+        curr_expiry = current_user.get("subscription_expiry")
+        if not curr_expiry or curr_expiry < datetime.utcnow():
+            new_expiry = datetime.utcnow() + timedelta(days=days)
+        else:
+            new_expiry = curr_expiry + timedelta(days=days)
+        update_dict["$set"]["subscription_expiry"] = new_expiry
+        update_dict["$set"]["subscription_status"] = "active"
+
     await db.users.update_one({"_id": current_user["_id"]}, update_dict)
-    return {"success": True, "message": f"{pkg['display_name']} başarıyla satın alındı!"}
+    
+    # Log transaction
+    purchase_record = {
+        "user_id": str(current_user["_id"]),
+        "package_id": pkg.get("package_id"),
+        "package_name": pkg.get("display_name"),
+        "points_spent": pkg["points_cost"],
+        "benefit_applied": {"type": benefit_type, "value": benefit_val},
+        "created_at": datetime.utcnow()
+    }
+    await db.point_purchases.insert_one(purchase_record)
+    
+    return {
+        "success": True,
+        "message": f"{pkg['display_name']} başarıyla satın alındı ve hesabınıza tanımlandı!",
+        "new_points": user_points - pkg["points_cost"]
+    }
 
 # --- Admin Package Management ---
 @api_router.post("/admin/packages")
@@ -1860,28 +1935,39 @@ async def admin_create_package(pkg_data: PackageCreate, current_user: dict = Dep
         "description": pkg_data.description,
         "benefit": {"type": pkg_data.benefit_type, "value": pkg_data.benefit_value}
     }
-    await db.point_packages.insert_one(pkg_dict)
-    pkg_dict["_id"] = str(pkg_dict["_id"])
+    res = await db.point_packages.insert_one(pkg_dict)
+    pkg_dict["_id"] = str(res.inserted_id)
     return pkg_dict
 
 @api_router.put("/admin/packages/{pkg_id}")
 async def admin_update_package(pkg_id: str, pkg_data: PackageUpdate, current_user: dict = Depends(require_permission("can_manage_plans"))):
     pkg = await db.point_packages.find_one({"package_id": pkg_id})
     if not pkg:
+        try:
+            pkg = await db.point_packages.find_one({"_id": ObjectId(pkg_id)})
+        except Exception:
+            pass
+            
+    if not pkg:
         raise HTTPException(status_code=404, detail="Paket bulunamadı")
     
+    target_package_id = pkg["package_id"]
     upd = {}
+    if pkg_data.name is not None:
+        upd["name"] = pkg_data.name
     if pkg_data.display_name is not None:
         upd["display_name"] = pkg_data.display_name
     if pkg_data.points_cost is not None:
         upd["points_cost"] = pkg_data.points_cost
     if pkg_data.description is not None:
         upd["description"] = pkg_data.description
+    if pkg_data.benefit_type is not None:
+        upd["benefit.type"] = pkg_data.benefit_type
     if pkg_data.benefit_value is not None:
         upd["benefit.value"] = pkg_data.benefit_value
         
     if upd:
-        await db.point_packages.update_one({"package_id": pkg_id}, {"$set": upd})
+        await db.point_packages.update_one({"package_id": target_package_id}, {"$set": upd})
         
     return {"success": True, "message": "Paket güncellendi"}
 
@@ -1889,7 +1975,10 @@ async def admin_update_package(pkg_id: str, pkg_data: PackageUpdate, current_use
 async def admin_delete_package(pkg_id: str, current_user: dict = Depends(require_permission("can_manage_plans"))):
     res = await db.point_packages.delete_one({"package_id": pkg_id})
     if res.deleted_count == 0:
-        raise HTTPException(status_code=404, detail="Paket bulunamadı")
+        try:
+            await db.point_packages.delete_one({"_id": ObjectId(pkg_id)})
+        except Exception:
+            pass
     return {"success": True, "message": "Paket silindi"}
 
 # --- Referral Submissions ---
