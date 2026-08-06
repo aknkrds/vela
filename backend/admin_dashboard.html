@@ -1858,9 +1858,10 @@
         function openPlanModal(planId = null) {
             const modal = document.getElementById("modal-plan-edit");
             const title = document.getElementById("plan-modal-title");
+            if (!modal) return;
             
             if (planId) {
-                const plan = allPlans.find(p => p._id === planId);
+                const plan = allPlans.find(p => String(p._id) === String(planId) || String(p.id) === String(planId) || p.name === planId);
                 if (!plan) return;
                 title.innerText = `Paket Düzenle: ${plan.display_name}`;
                 document.getElementById("plan-id").value = plan._id;
@@ -1897,12 +1898,13 @@
                 document.getElementById("plan-features").value = 'Yazılı Mesaj, Sesli Mesaj, Görüntülü Mesaj';
             }
             
-            modal.classList.add("active");
+            modal.classList.add("open");
             if (typeof lucide !== "undefined") lucide.createIcons();
         }
 
         function closePlanModal() {
-            document.getElementById("modal-plan-edit").classList.remove("active");
+            const modal = document.getElementById("modal-plan-edit");
+            if (modal) modal.classList.remove("open");
         }
 
         async function savePlan(e) {
