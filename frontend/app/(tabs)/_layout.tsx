@@ -4,9 +4,20 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSettings } from '@/src/contexts/SettingsContext';
 import { COMFORT_ICON_SIZE } from '@/src/utils/theme';
 
+import { useEffect } from 'react';
+import { useAuth } from '@/src/contexts/AuthContext';
+import { preloadInterstitialAd } from '@/src/services/admob';
+
 export default function TabsLayout() {
+  const { user } = useAuth();
   const { t, colors, comfortMode } = useSettings();
   const insets = useSafeAreaInsets();
+
+  useEffect(() => {
+    if (user?.subscription_tier === 'free') {
+      preloadInterstitialAd('free');
+    }
+  }, [user?.subscription_tier]);
 
   const baseHeight = comfortMode ? 72 : 60;
   const basePaddingBottom = comfortMode ? 10 : 8;

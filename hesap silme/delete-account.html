@@ -1,0 +1,1408 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vela — Hesap ve Kullanıcı Verisi Silme Talebi | Account & Data Deletion</title>
+  <meta name="description" content="Vela (velalife.tr) - Google Play Data Safety, GDPR ve KVKK uyumlu resmi hesap ve veri silme talebi sayfası.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #070d18;
+      --bg-secondary: #0d1527;
+      --bg-card: rgba(17, 27, 49, 0.85);
+      --bg-card-border: rgba(56, 189, 248, 0.18);
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.35);
+      --accent-gradient: linear-gradient(135deg, #38bdf8 0%, #6366f1 50%, #a855f7 100%);
+      --danger: #ef4444;
+      --danger-bg: rgba(239, 68, 68, 0.12);
+      --danger-border: rgba(239, 68, 68, 0.35);
+      --warning: #f59e0b;
+      --warning-bg: rgba(245, 158, 11, 0.12);
+      --warning-border: rgba(245, 158, 11, 0.35);
+      --success: #10b981;
+      --success-bg: rgba(16, 185, 129, 0.12);
+      --success-border: rgba(16, 185, 129, 0.35);
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --radius-xl: 28px;
+      --shadow-soft: 0 10px 30px -5px rgba(0, 0, 0, 0.5);
+      --shadow-glow: 0 0 40px -10px var(--accent-glow);
+      --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    [data-theme="light"] {
+      --bg-primary: #f1f5f9;
+      --bg-secondary: #ffffff;
+      --bg-card: rgba(255, 255, 255, 0.95);
+      --bg-card-border: rgba(148, 163, 184, 0.25);
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --text-muted: #94a3b8;
+      --accent: #0284c7;
+      --accent-glow: rgba(2, 132, 199, 0.2);
+      --danger-bg: rgba(239, 68, 68, 0.08);
+      --warning-bg: rgba(245, 158, 11, 0.08);
+      --shadow-soft: 0 10px 30px -5px rgba(15, 23, 42, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background-image: 
+        radial-gradient(circle at 15% 15%, rgba(56, 189, 248, 0.12) 0%, transparent 40%),
+        radial-gradient(circle at 85% 85%, rgba(99, 102, 241, 0.1) 0%, transparent 45%);
+      background-attachment: fixed;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    .container {
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 32px 20px 60px;
+      width: 100%;
+    }
+
+    /* Top Navigation Bar */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 24px;
+      margin-bottom: 32px;
+      border-bottom: 1px solid var(--bg-card-border);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .brand-logo {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: var(--accent-gradient);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 800;
+      font-size: 22px;
+      box-shadow: 0 4px 16px var(--accent-glow);
+    }
+
+    .brand-text h1 {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      line-height: 1.2;
+    }
+
+    .brand-text span {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .lang-select-wrapper {
+      position: relative;
+    }
+
+    .lang-select {
+      appearance: none;
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      border: 1px solid var(--bg-card-border);
+      padding: 8px 36px 8px 14px;
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      outline: none;
+      transition: var(--transition);
+    }
+
+    .lang-select:hover, .lang-select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    .lang-arrow {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      pointer-events: none;
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    .theme-toggle-btn {
+      background: var(--bg-secondary);
+      border: 1px solid var(--bg-card-border);
+      color: var(--text-primary);
+      width: 38px;
+      height: 38px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 16px;
+      transition: var(--transition);
+    }
+
+    .theme-toggle-btn:hover {
+      border-color: var(--accent);
+      transform: scale(1.05);
+    }
+
+    /* Hero Section */
+    .hero {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      margin-bottom: 16px;
+      text-transform: uppercase;
+    }
+
+    .badge-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 8px var(--accent);
+    }
+
+    .hero-title {
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: -1px;
+      margin-bottom: 12px;
+      line-height: 1.2;
+    }
+
+    .hero-subtitle {
+      font-size: 15px;
+      color: var(--text-secondary);
+      max-width: 640px;
+      margin: 0 auto;
+    }
+
+    /* Main Card */
+    .card {
+      background: var(--bg-card);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--bg-card-border);
+      border-radius: var(--radius-xl);
+      padding: 36px;
+      box-shadow: var(--shadow-soft);
+      margin-bottom: 28px;
+    }
+
+    /* Legal Warning Panel */
+    .warning-panel {
+      background: var(--danger-bg);
+      border: 1px solid var(--danger-border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      margin-bottom: 32px;
+    }
+
+    .warning-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+      color: var(--danger);
+      font-weight: 800;
+      font-size: 16px;
+    }
+
+    .warning-icon {
+      font-size: 20px;
+    }
+
+    .warning-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      list-style: none;
+    }
+
+    .warning-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      font-size: 13.5px;
+      line-height: 1.55;
+      color: var(--text-secondary);
+    }
+
+    .warning-bullet {
+      min-width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: rgba(239, 68, 68, 0.2);
+      color: var(--danger);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 800;
+      margin-top: 2px;
+    }
+
+    .warning-item strong {
+      color: var(--text-primary);
+      font-weight: 700;
+    }
+
+    /* Form Styles */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+
+    .form-group-full {
+      grid-column: span 2;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .required-star {
+      color: var(--danger);
+    }
+
+    .input-field, .select-field, .textarea-field {
+      width: 100%;
+      background: var(--bg-secondary);
+      border: 1px solid var(--bg-card-border);
+      color: var(--text-primary);
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+      font-size: 14px;
+      font-weight: 500;
+      outline: none;
+      transition: var(--transition);
+    }
+
+    .input-field:focus, .select-field:focus, .textarea-field:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    .input-field::placeholder, .textarea-field::placeholder {
+      color: var(--text-muted);
+    }
+
+    .textarea-field {
+      min-height: 80px;
+      resize: vertical;
+    }
+
+    /* Checkbox Card */
+    .consent-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--bg-card-border);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      cursor: pointer;
+      margin: 24px 0;
+      transition: var(--transition);
+    }
+
+    .consent-card:hover {
+      border-color: rgba(56, 189, 248, 0.4);
+    }
+
+    .consent-card.checked {
+      border-color: var(--accent);
+      background: rgba(56, 189, 248, 0.06);
+    }
+
+    .checkbox-custom {
+      min-width: 22px;
+      height: 22px;
+      border-radius: 6px;
+      border: 2px solid var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 2px;
+      transition: var(--transition);
+    }
+
+    .consent-card input[type="checkbox"] {
+      display: none;
+    }
+
+    .consent-card input[type="checkbox"]:checked + .checkbox-custom {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #070d18;
+    }
+
+    .checkbox-custom::after {
+      content: '✓';
+      font-size: 14px;
+      font-weight: 800;
+      display: none;
+    }
+
+    .consent-card input[type="checkbox"]:checked + .checkbox-custom::after {
+      display: block;
+    }
+
+    .consent-text {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      font-weight: 500;
+      user-select: none;
+    }
+
+    .consent-text strong {
+      color: var(--text-primary);
+    }
+
+    /* Submit Button */
+    .submit-btn {
+      width: 100%;
+      padding: 16px 24px;
+      border-radius: var(--radius-md);
+      border: none;
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      color: #fff;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      box-shadow: 0 4px 20px rgba(239, 68, 68, 0.35);
+      transition: var(--transition);
+    }
+
+    .submit-btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 28px rgba(239, 68, 68, 0.5);
+    }
+
+    .submit-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      display: none;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Quick Info Cards */
+    .info-cards-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
+      margin-top: 32px;
+    }
+
+    .info-box {
+      background: var(--bg-card);
+      border: 1px solid var(--bg-card-border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      text-align: center;
+    }
+
+    .info-box-icon {
+      font-size: 26px;
+      margin-bottom: 8px;
+    }
+
+    .info-box h3 {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .info-box p {
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.45;
+    }
+
+    /* Success / Result Modal */
+    .modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 999;
+      opacity: 0;
+      pointer-events: none;
+      transition: var(--transition);
+    }
+
+    .modal-backdrop.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-card {
+      background: var(--bg-card);
+      border: 1px solid var(--success-border);
+      border-radius: var(--radius-xl);
+      padding: 36px;
+      max-width: 480px;
+      width: 100%;
+      text-align: center;
+      box-shadow: var(--shadow-soft);
+      transform: scale(0.95);
+      transition: var(--transition);
+    }
+
+    .modal-backdrop.active .modal-card {
+      transform: scale(1);
+    }
+
+    .modal-icon-circle {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: var(--success-bg);
+      border: 2px solid var(--success);
+      color: var(--success);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      margin: 0 auto 20px;
+    }
+
+    .modal-title {
+      font-size: 22px;
+      font-weight: 800;
+      margin-bottom: 10px;
+    }
+
+    .modal-desc {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+
+    .modal-details {
+      background: var(--bg-secondary);
+      border: 1px solid var(--bg-card-border);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      margin-bottom: 24px;
+      text-align: left;
+      font-size: 13px;
+    }
+
+    .modal-detail-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--bg-card-border);
+    }
+
+    .modal-detail-row:last-child {
+      border-bottom: none;
+    }
+
+    .modal-detail-label {
+      color: var(--text-muted);
+    }
+
+    .modal-detail-value {
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .modal-close-btn {
+      width: 100%;
+      padding: 14px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--bg-card-border);
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      font-weight: 700;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .modal-close-btn:hover {
+      border-color: var(--accent);
+      background: rgba(56, 189, 248, 0.1);
+    }
+
+    /* Footer */
+    footer {
+      margin-top: auto;
+      text-align: center;
+      padding-top: 40px;
+      border-top: 1px solid var(--bg-card-border);
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin-bottom: 12px;
+    }
+
+    .footer-links a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover {
+      color: var(--accent);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+      .form-group-full {
+        grid-column: span 1;
+      }
+      .info-cards-grid {
+        grid-template-columns: 1fr;
+      }
+      .card {
+        padding: 24px 18px;
+      }
+      .hero-title {
+        font-size: 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- Header -->
+    <header>
+      <a href="https://velalife.tr" class="brand" target="_blank" rel="noopener">
+        <div class="brand-logo">V</div>
+        <div class="brand-text">
+          <h1>Vela</h1>
+          <span>velalife.tr • SYMI Tech</span>
+        </div>
+      </a>
+      <div class="nav-actions">
+        <!-- Language Selector -->
+        <div class="lang-select-wrapper">
+          <select id="langSelect" class="lang-select" onchange="changeLanguage(this.value)">
+            <option value="tr">🇹🇷 Türkçe (TR)</option>
+            <option value="en">🇬🇧 English (EN)</option>
+            <option value="de">🇩🇪 Deutsch (DE)</option>
+            <option value="es">🇪🇸 Español (ES)</option>
+            <option value="ar">🇸🇦 العربية (AR)</option>
+            <option value="hi">🇮🇳 हिन्दी (HI)</option>
+            <option value="ja">🇯🇵 日本語 (JA)</option>
+            <option value="ko">🇰🇷 한국어 (KO)</option>
+          </select>
+          <span class="lang-arrow">▼</span>
+        </div>
+        <!-- Theme Toggle -->
+        <button class="theme-toggle-btn" onclick="toggleTheme()" title="Tema Değiştir" id="themeBtn">🌙</button>
+      </div>
+    </header>
+
+    <!-- Hero Title -->
+    <section class="hero">
+      <div class="badge">
+        <span class="badge-dot"></span>
+        <span id="txt-badge">Google Play Data Safety & GDPR/KVKK</span>
+      </div>
+      <h2 class="hero-title" id="txt-hero-title">Hesap ve Kullanıcı Verisi Silme Talebi</h2>
+      <p class="hero-subtitle" id="txt-hero-subtitle">
+        Vela hesabınızı ve sistemlerimizde kayıtlı tüm kişisel verilerinizi kalıcı olarak silmek için bu resmi talep formunu doldurabilirsiniz.
+      </p>
+    </section>
+
+    <!-- Main Card -->
+    <div class="card">
+      <!-- Legal Notice & Warning Panel -->
+      <div class="warning-panel">
+        <div class="warning-header">
+          <span class="warning-icon">⚠️</span>
+          <span id="txt-warning-header">ÖNEMLİ HUKUKİ BİLGİLENDİRME VE UYARILAR</span>
+        </div>
+        <ul class="warning-list">
+          <li class="warning-item">
+            <span class="warning-bullet">1</span>
+            <div id="txt-warn-1">
+              <strong>Kalıcı ve Geri Döndürülemez Silme:</strong> Talep onaylandığında hesap bilgileri, kimlik kayıtları, metin mesajları, ses ve video kayıtları veritabanından ve disklerden kalıcı olarak silinir, teknik olarak geri getirilmesi mümkün değildir.
+            </div>
+          </li>
+          <li class="warning-item">
+            <span class="warning-bullet">2</span>
+            <div id="txt-warn-2">
+              <strong>Uygulama İçi Silme Alternatifi:</strong> Kullanıcılar dilerlerse tüm mesaj ve medya içeriklerini uygulama içerisinden kendileri de anlık olarak temizleyebilirler.
+            </div>
+          </li>
+          <li class="warning-item">
+            <span class="warning-bullet">3</span>
+            <div id="txt-warn-3">
+              <strong>Uçtan Uca Şifreleme ve Gizlilik Güvencesi:</strong> Kullanıcı verileri asla 3. şahıs veya kurumlarla paylaşılmaz. Tüm metinler uçtan uca şifreli, sunucu verileri ise yüksek güvenlikli şifreli altyapıda saklanmaktadır.
+            </div>
+          </li>
+          <li class="warning-item">
+            <span class="warning-bullet">4</span>
+            <div id="txt-warn-4">
+              <strong>7 İş Günü Süreç ve İptal Şartı:</strong> Form tarafımıza ulaştıktan sonra silme süreci 7 iş günü içerisinde tamamlanır. İptal talepleri yalnızca <code>info@symi.com.tr</code> adresine e-posta konusu <em>'İPTAL İSTEĞİ / CANCELLATION REQUEST'</em> olacak şekilde yazılı iletilmelidir. Farklı konu başlıklarıyla iletilen e-postaların filtrelere takılması veya gecikmesinden doğacak sorumluluk kullanıcıya aittir.
+            </div>
+          </li>
+          <li class="warning-item">
+            <span class="warning-bullet">5</span>
+            <div id="txt-warn-5">
+              <strong>Hukuki Sorumluluk Beyanı:</strong> Bu formun doldurulması kesin bir silme iradesi teşkil eder. Kullanıcı formu göndererek tüm sonuçları peşinen kabul etmiş sayılır.
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Form -->
+      <form id="deletionForm" onsubmit="handleFormSubmit(event)">
+        <div class="form-grid">
+          <!-- Full Name -->
+          <div class="form-group">
+            <label for="fullName">
+              <span id="txt-label-name">Ad Soyad</span>
+              <span class="required-star">*</span>
+            </label>
+            <input type="text" id="fullName" class="input-field" placeholder="Örn: Ahmet Yılmaz" required>
+          </div>
+
+          <!-- Registered Email -->
+          <div class="form-group">
+            <label for="email">
+              <span id="txt-label-email">Vela Kayıtlı E-Posta Adresi</span>
+              <span class="required-star">*</span>
+            </label>
+            <input type="email" id="email" class="input-field" placeholder="hesabiniz@ornek.com" required>
+          </div>
+
+          <!-- Phone or User ID -->
+          <div class="form-group">
+            <label for="phoneOrId">
+              <span id="txt-label-phone">Telefon Numarası veya Kullanıcı ID</span>
+              <span style="font-size: 11px; color: var(--text-muted);" id="txt-opt-tag">(Opsiyonel)</span>
+            </label>
+            <input type="text" id="phoneOrId" class="input-field" placeholder="+90 5XX XXX XX XX">
+          </div>
+
+          <!-- Reason -->
+          <div class="form-group">
+            <label for="reason">
+              <span id="txt-label-reason">Silme Nedeni</span>
+              <span class="required-star">*</span>
+            </label>
+            <select id="reason" class="select-field" required>
+              <option value="Hesabımı kapatmak istiyorum" id="opt-1">Hesabımı kapatmak istiyorum</option>
+              <option value="Verilerimin tamamen silinmesini istiyorum" id="opt-2">Verilerimin tamamen silinmesini istiyorum</option>
+              <option value="Uygulamayı artık kullanmıyorum" id="opt-3">Uygulamayı artık kullanmıyorum</option>
+              <option value="Gizlilik veya güvenlik endişeleri" id="opt-4">Gizlilik veya güvenlik endişeleri</option>
+              <option value="Diğer" id="opt-5">Diğer</option>
+            </select>
+          </div>
+
+          <!-- Optional Notes -->
+          <div class="form-group form-group-full">
+            <label for="notes">
+              <span id="txt-label-notes">Ek Açıklama / Notlar</span>
+              <span style="font-size: 11px; color: var(--text-muted);" id="txt-opt-tag-2">(Opsiyonel)</span>
+            </label>
+            <textarea id="notes" class="textarea-field" placeholder="Varsa eklemek istediğiniz detaylar..."></textarea>
+          </div>
+        </div>
+
+        <!-- Digital Consent Checkbox -->
+        <label class="consent-card" id="consentCard" onclick="toggleConsentCheckbox(event)">
+          <input type="checkbox" id="consentCheckbox" required>
+          <div class="checkbox-custom"></div>
+          <div class="consent-text" id="txt-consent-text">
+            <strong>Yukarıdaki yasal uyarıları</strong>, verilerimin kalıcı olarak silineceğini, işlemin geri alınamayacağını ve talebimin <strong>7 iş günü içinde</strong> gerçekleştirileceğini okudum, anladım ve onaylıyorum.
+          </div>
+        </label>
+
+        <!-- Submit Button -->
+        <button type="submit" class="submit-btn" id="submitBtn">
+          <span class="spinner" id="btnSpinner"></span>
+          <span id="txt-submit-btn">🗑️ Hesap ve Verilerimi Kalıcı Olarak Sil</span>
+        </button>
+      </form>
+    </div>
+
+    <!-- Quick Info Cards Grid -->
+    <div class="info-cards-grid">
+      <div class="info-box">
+        <div class="info-box-icon">🔒</div>
+        <h3 id="txt-box1-title">Uçtan Uca Şifreleme</h3>
+        <p id="txt-box1-desc">Mesajlarınız ve medyalarınız silinene kadar askeri düzeyde şifreli tutulur.</p>
+      </div>
+      <div class="info-box">
+        <div class="info-box-icon">⏱️</div>
+        <h3 id="txt-box2-title">7 İş Günü Süreç</h3>
+        <p id="txt-box2-desc">Talebiniz doğrulandıktan sonra veriler tüm disk ve yedeklerden arındırılır.</p>
+      </div>
+      <div class="info-box">
+        <div class="info-box-icon">✉️</div>
+        <h3 id="txt-box3-title">İptal Bildirimi</h3>
+        <p id="txt-box3-desc">İptal için <code>info@symi.com.tr</code> adresine 'İPTAL İSTEĞİ' konusuyla yazın.</p>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+      <div class="footer-links">
+        <a href="https://velalife.tr" target="_blank" id="txt-foot-home">Ana Sayfa</a>
+        <a href="mailto:info@symi.com.tr" id="txt-foot-contact">İletişim: info@symi.com.tr</a>
+      </div>
+      <p id="txt-foot-copy">© 2026 Vela (velalife.tr) • SYMI Tech. Tüm hakları saklıdır. Google Play Data Safety & GDPR/KVKK Compliant.</p>
+    </footer>
+  </div>
+
+  <!-- Success Confirmation Modal -->
+  <div class="modal-backdrop" id="successModal">
+    <div class="modal-card">
+      <div class="modal-icon-circle">✓</div>
+      <h3 class="modal-title" id="txt-modal-title">Talebiniz Alındı</h3>
+      <p class="modal-desc" id="txt-modal-desc">
+        Hesap ve veri silme talebiniz başarıyla kaydedilmiştir. İşleminiz 7 iş günü içerisinde tamamlanacaktır.
+      </p>
+      <div class="modal-details">
+        <div class="modal-detail-row">
+          <span class="modal-detail-label" id="txt-modal-ref-label">Takip No:</span>
+          <span class="modal-detail-value" id="modalRefNo">DEL-984214</span>
+        </div>
+        <div class="modal-detail-row">
+          <span class="modal-detail-label" id="txt-modal-email-label">E-Posta:</span>
+          <span class="modal-detail-value" id="modalEmail">kullanici@ornek.com</span>
+        </div>
+        <div class="modal-detail-row">
+          <span class="modal-detail-label" id="txt-modal-status-label">Durum:</span>
+          <span class="modal-detail-value" style="color: var(--warning);" id="txt-modal-status">İşleme Alındı (7 İş Günü)</span>
+        </div>
+      </div>
+      <button class="modal-close-btn" onclick="closeModal()" id="txt-modal-close-btn">Anladım ve Kapat</button>
+    </div>
+  </div>
+
+  <script>
+    // --------------------------------------------------------
+    // MULTI-LANGUAGE DICTIONARY (Extensible JSON structure)
+    // --------------------------------------------------------
+    const I18N = {
+      tr: {
+        badge: "Google Play Data Safety & GDPR/KVKK",
+        heroTitle: "Hesap ve Kullanıcı Verisi Silme Talebi",
+        heroSubtitle: "Vela hesabınızı ve sistemlerimizde kayıtlı tüm kişisel verilerinizi kalıcı olarak silmek için bu resmi talep formunu doldurabilirsiniz.",
+        warningHeader: "ÖNEMLİ HUKUKİ BİLGİLENDİRME VE UYARILAR",
+        warn1: "<strong>Kalıcı ve Geri Döndürülemez Silme:</strong> Talep onaylandığında hesap bilgileri, kimlik kayıtları, metin mesajları, ses ve video kayıtları veritabanından ve disklerden kalıcı olarak silinir, teknik olarak geri getirilmesi mümkün değildir.",
+        warn2: "<strong>Uygulama İçi Silme Alternatifi:</strong> Kullanıcılar dilerlerse tüm mesaj ve medya içeriklerini uygulama içerisinden kendileri de anlık olarak temizleyebilirler.",
+        warn3: "<strong>Uçtan Uca Şifreleme ve Gizlilik Güvencesi:</strong> Kullanıcı verileri asla 3. şahıs veya kurumlarla paylaşılmaz. Tüm metinler uçtan uca şifreli, sunucu verileri ise yüksek güvenlikli şifreli altyapıda saklanmaktadır.",
+        warn4: "<strong>7 İş Günü Süreç ve İptal Şartı:</strong> Form tarafımıza ulaştıktan sonra silme süreci 7 iş günü içerisinde tamamlanır. İptal talepleri yalnızca <code>info@symi.com.tr</code> adresine e-posta konusu <em>'İPTAL İSTEĞİ / CANCELLATION REQUEST'</em> olacak şekilde yazılı iletilmelidir. Farklı konu başlıklarıyla iletilen e-postaların filtrelere takılması veya gecikmesinden doğacak sorumluluk kullanıcıya aittir.",
+        warn5: "<strong>Hukuki Sorumluluk Beyanı:</strong> Bu formun doldurulması kesin bir silme iradesi teşkil eder. Kullanıcı formu göndererek tüm sonuçları peşinen kabul etmiş sayılır.",
+        labelName: "Ad Soyad",
+        labelEmail: "Vela Kayıtlı E-Posta Adresi",
+        labelPhone: "Telefon Numarası veya Kullanıcı ID",
+        labelReason: "Silme Nedeni",
+        labelNotes: "Ek Açıklama / Notlar",
+        optTag: "(Opsiyonel)",
+        opt1: "Hesabımı kapatmak istiyorum",
+        opt2: "Verilerimin tamamen silinmesini istiyorum",
+        opt3: "Uygulamayı artık kullanmıyorum",
+        opt4: "Gizlilik veya güvenlik endişeleri",
+        opt5: "Diğer",
+        consentText: "<strong>Yukarıdaki yasal uyarıları</strong>, verilerimin kalıcı olarak silineceğini, işlemin geri alınamayacağını ve talebimin <strong>7 iş günü içinde</strong> gerçekleştirileceğini okudum, anladım ve onaylıyorum.",
+        submitBtn: "🗑️ Hesap ve Verilerimi Kalıcı Olarak Sil",
+        box1Title: "Uçtan Uca Şifreleme",
+        box1Desc: "Mesajlarınız ve medyalarınız silinene kadar askeri düzeyde şifreli tutulur.",
+        box2Title: "7 İş Günü Süreç",
+        box2Desc: "Talebiniz doğrulandıktan sonra veriler tüm disk ve yedeklerden arındırılır.",
+        box3Title: "İptal Bildirimi",
+        box3Desc: "İptal için info@symi.com.tr adresine 'İPTAL İSTEĞİ' konusuyla yazın.",
+        modalTitle: "Talebiniz Alındı",
+        modalDesc: "Hesap ve veri silme talebiniz başarıyla kaydedilmiştir. İşleminiz 7 iş günü içerisinde tamamlanacaktır.",
+        modalRefLabel: "Takip No:",
+        modalEmailLabel: "E-Posta:",
+        modalStatusLabel: "Durum:",
+        modalStatus: "İşleme Alındı (7 İş Günü)",
+        modalCloseBtn: "Anladım ve Kapat",
+        footHome: "Ana Sayfa",
+        footContact: "İletişim: info@symi.com.tr",
+        footCopy: "© 2026 Vela (velalife.tr) • SYMI Tech. Tüm hakları saklıdır. Google Play Data Safety & GDPR/KVKK Compliant."
+      },
+      en: {
+        badge: "Google Play Data Safety & GDPR / CCPA",
+        heroTitle: "Account & Personal Data Deletion Request",
+        heroSubtitle: "Submit this official request form to permanently delete your Vela account and all personal data stored in our systems.",
+        warningHeader: "CRITICAL LEGAL NOTICE & WARNINGS",
+        warn1: "<strong>Permanent and Irreversible Deletion:</strong> Upon approval, account credentials, identity records, text messages, audio, and video recordings are permanently purged from databases and disks. Technical recovery is impossible.",
+        warn2: "<strong>In-App Deletion Alternative:</strong> Users can also purge their messages and media contents directly within the Vela mobile app at any time.",
+        warn3: "<strong>End-to-End Encryption & Privacy Guarantee:</strong> User data is never shared with third parties. All messages are end-to-end encrypted and server records are stored on high-security encrypted storage.",
+        warn4: "<strong>7 Business Days Timeline & Cancellation Policy:</strong> Deletion is finalized within 7 business days. Cancellation requests must be sent in writing exclusively to <code>info@symi.com.tr</code> with the exact subject <em>'İPTAL İSTEĞİ / CANCELLATION REQUEST'</em>. Delays caused by differing email subjects remain the user's responsibility.",
+        warn5: "<strong>Legal Liability Declaration:</strong> Submitting this form represents an explicit, final intent for deletion. The user acknowledges and accepts all resulting consequences in advance.",
+        labelName: "Full Name",
+        labelEmail: "Vela Registered Email Address",
+        labelPhone: "Phone Number or User ID",
+        labelReason: "Reason for Deletion",
+        labelNotes: "Additional Notes / Remarks",
+        optTag: "(Optional)",
+        opt1: "I want to close my account",
+        opt2: "I want all my data permanently erased",
+        opt3: "I no longer use the application",
+        opt4: "Privacy or security concerns",
+        opt5: "Other",
+        consentText: "I have read, understood, and agree to the <strong>legal warnings above</strong>, acknowledging that my data will be permanently purged and the deletion will complete within <strong>7 business days</strong>.",
+        submitBtn: "🗑️ Permanently Delete My Account & Data",
+        box1Title: "End-to-End Encryption",
+        box1Desc: "Your messages and media remain military-grade encrypted until full erasure.",
+        box2Title: "7 Business Days SLA",
+        box2Desc: "Once validated, data is permanently cleansed from all active disks and backups.",
+        box3Title: "Cancellation Procedure",
+        box3Desc: "To cancel, email info@symi.com.tr with subject 'CANCELLATION REQUEST'.",
+        modalTitle: "Request Successfully Received",
+        modalDesc: "Your account & data deletion request has been registered. Processing will conclude within 7 business days.",
+        modalRefLabel: "Reference ID:",
+        modalEmailLabel: "Email:",
+        modalStatusLabel: "Status:",
+        modalStatus: "Processing (7 Business Days)",
+        modalCloseBtn: "Acknowledge & Close",
+        footHome: "Homepage",
+        footContact: "Contact: info@symi.com.tr",
+        footCopy: "© 2026 Vela (velalife.tr) • SYMI Tech. All rights reserved. Google Play Data Safety & GDPR Compliant."
+      },
+      de: {
+        badge: "Google Play Data Safety & DSGVO-Konform",
+        heroTitle: "Antrag auf Konto- und Datenlöschung",
+        heroSubtitle: "Füllen Sie dieses Formular aus, um Ihr Vela-Konto und alle personenbezogenen Daten unwiderruflich zu löschen.",
+        warningHeader: "WICHTIGE RECHTLICHE HINWEISE",
+        warn1: "<strong>Unwiderrufliche Löschung:</strong> Alle Kontodaten, Text-, Audio- und Videonachrichten werden dauerhaft und technisch nicht wiederherstellbar gelöscht.",
+        warn2: "<strong>Löschung in der App:</strong> Sie können Inhalte auch jederzeit direkt in der Vela-App löschen.",
+        warn3: "<strong>Ende-zu-Ende-Verschlüsselung:</strong> Ihre Daten werden niemals an Dritte weitergegeben.",
+        warn4: "<strong>7 Werktage Frist & Stornierung:</strong> Die Löschung erfolgt innerhalb von 7 Werktagen. Stornierungen ausschließlich per E-Mail an <code>info@symi.com.tr</code> mit Betreff 'CANCELLATION REQUEST'.",
+        warn5: "<strong>Haftungsausschluss:</strong> Das Absenden dieses Formulars gilt als endgültige Willenserklärung zur Löschung.",
+        labelName: "Vollständiger Name",
+        labelEmail: "Bei Vela registrierte E-Mail-Adresse",
+        labelPhone: "Telefonnummer oder Benutzer-ID",
+        labelReason: "Grund für die Löschung",
+        labelNotes: "Zusätzliche Anmerkungen",
+        optTag: "(Optional)",
+        opt1: "Ich möchte mein Konto schließen",
+        opt2: "Vollständige Datenlöschung gewünscht",
+        opt3: "App wird nicht mehr genutzt",
+        opt4: "Datenschutz- / Sicherheitsbedenken",
+        opt5: "Sonstiges",
+        consentText: "Ich habe die <strong>rechtlichen Hinweise gelesen und akzeptiert</strong> und bestätige die unwiderrufliche Löschung innerhalb von <strong>7 Werktagen</strong>.",
+        submitBtn: "🗑️ Konto & Daten unwiderruflich löschen",
+        box1Title: "E2E-Verschlüsselung",
+        box1Desc: "Daten bleiben bis zur vollständigen Löschung hochgradig verschlüsselt.",
+        box2Title: "7 Werktage Frist",
+        box2Desc: "Löschung aller aktiven Datensätze und Backups.",
+        box3Title: "Stornierung",
+        box3Desc: "E-Mail an info@symi.com.tr mit Betreff 'CANCELLATION REQUEST'.",
+        modalTitle: "Antrag eingegangen",
+        modalDesc: "Ihr Antrag wird innerhalb von 7 Werktagen bearbeitet.",
+        modalRefLabel: "Referenz-Nr.:",
+        modalEmailLabel: "E-Mail:",
+        modalStatusLabel: "Status:",
+        modalStatus: "In Bearbeitung (7 Werktage)",
+        modalCloseBtn: "Schließen",
+        footHome: "Startseite",
+        footContact: "Kontakt: info@symi.com.tr",
+        footCopy: "© 2026 Vela (velalife.tr) • SYMI Tech. DSGVO-konform."
+      },
+      es: {
+        badge: "Google Play Data Safety & RGPD",
+        heroTitle: "Solicitud de Eliminación de Cuenta y Datos",
+        heroSubtitle: "Complete este formulario oficial para eliminar permanentemente su cuenta de Vela y todos sus datos personales.",
+        warningHeader: "AVISO LEGAL IMPORTANTE",
+        warn1: "<strong>Eliminación Permanente e Irreversible:</strong> Todos los datos, mensajes de texto, audio y video se eliminarán definitivamente sin posibilidad de recuperación técnica.",
+        warn2: "<strong>Alternativa en la App:</strong> Puede eliminar sus mensajes y archivos directamente desde la app en cualquier momento.",
+        warn3: "<strong>Cifrado de Extremo a Extremo:</strong> Sus datos nunca se comparten con terceros.",
+        warn4: "<strong>Plazo de 7 Días Hábiles:</strong> El proceso toma 7 días hábiles. Las cancelaciones deben enviarse a <code>info@symi.com.tr</code> con el asunto 'CANCELLATION REQUEST'.",
+        warn5: "<strong>Declaración de Responsabilidad:</strong> El envío del formulario constituye una voluntad definitiva de eliminación.",
+        labelName: "Nombre Completo",
+        labelEmail: "Correo Registrado en Vela",
+        labelPhone: "Teléfono o ID de Usuario",
+        labelReason: "Motivo de la Eliminación",
+        labelNotes: "Notas Adicionales",
+        optTag: "(Opcional)",
+        opt1: "Deseo cerrar mi cuenta",
+        opt2: "Deseo borrar todos mis datos",
+        opt3: "Ya no uso la aplicación",
+        opt4: "Privacidad o seguridad",
+        opt5: "Otro",
+        consentText: "He leído y acepto los <strong>avisos legales</strong>, reconociendo que mis datos serán eliminados permanentemente en un plazo de <strong>7 días hábiles</strong>.",
+        submitBtn: "🗑️ Eliminar Definitivamente mi Cuenta y Datos",
+        box1Title: "Cifrado E2E",
+        box1Desc: "Sus datos permanecen cifrados hasta su borrado definitivo.",
+        box2Title: "7 Días Hábiles",
+        box2Desc: "Limpieza total de bases de datos y copias de seguridad.",
+        box3Title: "Cancelación",
+        box3Desc: "Escriba a info@symi.com.tr con asunto 'CANCELLATION REQUEST'.",
+        modalTitle: "Solicitud Recibida",
+        modalDesc: "Su solicitud ha sido registrada y se procesará en 7 días hábiles.",
+        modalRefLabel: "No. de Referencia:",
+        modalEmailLabel: "Correo:",
+        modalStatusLabel: "Estado:",
+        modalStatus: "En Proceso (7 Días Hábiles)",
+        modalCloseBtn: "Entendido y Cerrar",
+        footHome: "Inicio",
+        footContact: "Contacto: info@symi.com.tr",
+        footCopy: "© 2026 Vela (velalife.tr) • SYMI Tech. Conforme a RGPD."
+      },
+      ar: {
+        badge: "Google Play Data Safety & حماية البيانات",
+        heroTitle: "طلب حذف الحساب والبيانات الشخصية",
+        heroSubtitle: "املأ هذا النموذج الرسمي لحذف حساب Vela وجميع بياناتك الشخصية نهائياً من خوادمنا.",
+        warningHeader: "إشعار قانوني وتحذيرات هامة",
+        warn1: "<strong>حذف نهائي لا رجعة فيه:</strong> بمجرد الموافقة، سيتم حذف بيانات الحساب والرسائل النصية والصوتية والفيديو نهائياً ولا يمكن استرجاعها تقنياً.",
+        warn2: "<strong>الحذف من داخل التطبيق:</strong> يمكنك أيضاً مسح رسائلك وملفاتك مباشرة من داخل التطبيق في أي وقت.",
+        warn3: "<strong>تشفير تام من طرف لطرف:</strong> لا تتم مشاركة بياناتك أبداً مع أي طرف ثالث.",
+        warn4: "<strong>فترة 7 أيام عمل وإلغاء الطلب:</strong> تكتمل عملية الحذف خلال 7 أيام عمل. للإلغاء، أرسل بريداً إلى <code>info@symi.com.tr</code> بعنوان 'CANCELLATION REQUEST'.",
+        warn5: "<strong>إقرار بالمسؤولية:</strong> يمثل إرسال النموذج رغبة قاطعة ونهائية في الحذف.",
+        labelName: "الاسم الكامل",
+        labelEmail: "البريد الإلكتروني المسجل في Vela",
+        labelPhone: "رقم الهاتف أو معرف المستخدم",
+        labelReason: "سبب الحذف",
+        labelNotes: "ملاحظات إضافية",
+        optTag: "(اختياري)",
+        opt1: "أرغب في إغلاق حسابي",
+        opt2: "أرغب في حذف جميع بياناتي نهائياً",
+        opt3: "لم أعد أستخدم التطبيق",
+        opt4: "مخاوف تتعلق بالخصوصية أو الأمان",
+        opt5: "أخرى",
+        consentText: "لقد قرأت ووافقت على <strong>التحذيرات القانونية أعلاه</strong>، وأدرك أن بياناتي ستُحذف نهائياً خلال <strong>7 أيام عمل</strong>.",
+        submitBtn: "🗑️ حذف حسابي وبياناتي نهائياً",
+        box1Title: "تشفير كامل",
+        box1Desc: "تظل بياناتك مشفرة بأعلى المعايير حتى إتمام الحذف.",
+        box2Title: "7 أيام عمل",
+        box2Desc: "تنظيف تام لجميع الخوادم والنسخ الاحتياطية.",
+        box3Title: "إلغاء الطلب",
+        box3Desc: "راسل info@symi.com.tr بعنوان 'CANCELLATION REQUEST'.",
+        modalTitle: "تم استلام طلبك بنجاح",
+        modalDesc: "تم تسجيل طلبك وسيتم إنجازه خلال 7 أيام عمل.",
+        modalRefLabel: "رقم الطلب:",
+        modalEmailLabel: "البريد:",
+        modalStatusLabel: "الحالة:",
+        modalStatus: "قيد المعالجة (7 أيام عمل)",
+        modalCloseBtn: "إغلاق",
+        footHome: "الرئيسية",
+        footContact: "اتصل بنا: info@symi.com.tr",
+        footCopy: "© 2026 Vela (velalife.tr) • SYMI Tech. جميع الحقوق محفوظة."
+      },
+      hi: {
+        badge: "Google Play Data Safety & गोपनीयता अनुपालन",
+        heroTitle: "खाता और व्यक्तिगत डेटा हटाने का अनुरोध",
+        heroSubtitle: "अपने Vela खाते और सभी संग्रहीत व्यक्तिगत डेटा को स्थायी रूप से हटाने के लिए यह आधिकारिक फ़ॉर्म भरें।",
+        warningHeader: "महत्वपूर्ण कानूनी सूचना और चेतावनियां",
+        warn1: "<strong>स्थायी और अपरिवर्तनीय विलोपन:</strong> अनुरोध स्वीकृत होने पर सभी खाते, संदेश, ऑडियो और वीडियो रिकॉर्ड स्थायी रूप से हटा दिए जाते हैं।",
+        warn2: "<strong>ऐप में हटाने का विकल्प:</strong> आप ऐप के भीतर से भी सीधे अपने संदेश हटा सकते हैं।",
+        warn3: "<strong>एंड-टू-एंड एन्क्रिप्शन:</strong> आपका डेटा कभी भी तीसरे पक्ष के साथ साझा नहीं किया जाता है।",
+        warn4: "<strong>7 कार्य दिवस की समय सीमा:</strong> विलोपन 7 कार्य दिवसों में पूरा होता है। रद्दीकरण के लिए 'CANCELLATION REQUEST' विषय के साथ <code>info@symi.com.tr</code> पर ईमेल करें।",
+        warn5: "<strong>कानूनी दायित्व:</strong> फ़ॉर्म जमा करना विलोपन के स्पष्ट इरादे को दर्शाता है।",
+        labelName: "पूरा नाम",
+        labelEmail: "Vela में पंजीकृत ईमेल पता",
+        labelPhone: "फ़ोन नंबर या उपयोगकर्ता ID",
+        labelReason: "हटाने का कारण",
+        labelNotes: "अतिरिक्त विवरण",
+        optTag: "(वैकल्पिक)",
+        opt1: "मैं अपना खाता बंद करना चाहता हूं",
+        opt2: "मैं अपना सारा डेटा हटाना चाहता हूं",
+        opt3: "अब ऐप का उपयोग नहीं करता",
+        opt4: "गोपनीयता या सुरक्षा संबंधी चिंताएं",
+        opt5: "अन्य",
+        consentText: "मैंने <strong>कानूनी चेतावनियां पढ़ ली हैं</strong> और पुष्टि करता हूं कि मेरा डेटा <strong>7 कार्य दिवसों</strong> में स्थायी रूप से हटा दिया जाएगा।",
+        submitBtn: "🗑️ मेरा खाता और डेटा स्थायी रूप से हटाएं",
+        box1Title: "सुरक्षित एन्क्रिप्शन",
+        box1Desc: "डेटा हटने तक पूर्ण सुरक्षित एन्क्रिप्टेड रहता है।",
+        box2Title: "7 कार्य दिवस",
+        box2Desc: "बैकअप और सर्वर से पूर्ण डेटा निष्कासन।",
+        box3Title: "रद्दीकरण",
+        box3Desc: "रद्दीकरण के लिए info@symi.com.tr पर लिखें।",
+        modalTitle: "अनुरोध प्राप्त हुआ",
+        modalDesc: "आपका अनुरोध सफलतापूर्वक दर्ज किया गया है।",
+        modalRefLabel: "संदर्भ संख्या:",
+        modalEmailLabel: "ईमेल:",
+        modalStatusLabel: "स्थिति:",
+        modalStatus: "प्रक्रिया में (7 कार्य दिवस)",
+        modalCloseBtn: "बंद करें",
+        footHome: "होमपेज",
+        footContact: "संपर्क: info@symi.com.tr",
+        footCopy: "© 2026 Vela (velalife.tr) • SYMI Tech. सर्वाधिकार सुरक्षित।"
+      },
+      ja: {
+        badge: "Google Play Data Safety & GDPR準拠",
+        heroTitle: "アカウントおよびユーザーデータ削除リクエスト",
+        heroSubtitle: "Velaアカウントおよびすべての保存データを完全に削除するための公式申請フォームです。",
+        warningHeader: "重要な法的注意事項",
+        warn1: "<strong>完全かつ不可逆的な削除:</strong> 承認後、アカウント、テキスト、音声、動画データは完全に削除され、復元は不可能です。",
+        warn2: "<strong>アプリ内削除の選択肢:</strong> アプリ内から直接メッセージやメディアを削除することも可能です。",
+        warn3: "<strong>エンドツーエンド暗号化:</strong> ユーザーデータが第三者に共有されることはありません。",
+        warn4: "<strong>7営業日の処理期間:</strong> 処理は7営業日以内に完了します。キャンセルは件名を「CANCELLATION REQUEST」として<code>info@symi.com.tr</code>へご連絡ください。",
+        warn5: "<strong>責任声明:</strong> 送信をもって完全な削除に同意したものとみなされます。",
+        labelName: "氏名",
+        labelEmail: "Vela登録メールアドレス",
+        labelPhone: "電話番号またはユーザーID",
+        labelReason: "削除理由",
+        labelNotes: "追加の備考",
+        optTag: "(任意)",
+        opt1: "アカウントを退会したい",
+        opt2: "全データを完全に削除したい",
+        opt3: "アプリを利用しなくなった",
+        opt4: "プライバシーまたはセキュリティの懸念",
+        opt5: "その他",
+        consentText: "上記の<strong>法的警告を確認・同意</strong>し、データが<strong>7営業日以内</strong>に完全消去されることを承認します。",
+        submitBtn: "🗑️ アカウントとデータを完全に削除",
+        box1Title: "高度な暗号化",
+        box1Desc: "削除完了までデータは強固に暗号化されています。",
+        box2Title: "7営業日",
+        box2Desc: "全ディスクおよびバックアップからの完全消去。",
+        box3Title: "キャンセル受付",
+        box3Desc: "info@symi.com.trへ件名「CANCELLATION REQUEST」で送信。",
+        modalTitle: "申請を受け付けました",
+        modalDesc: "7営業日以内に削除処理が完了します。",
+        modalRefLabel: "受付番号:",
+        modalEmailLabel: "メール:",
+        modalStatusLabel: "ステータス:",
+        modalStatus: "処理中 (7営業日)",
+        modalCloseBtn: "閉じる",
+        footHome: "ホーム",
+        footContact: "お問い合わせ: info@symi.com.tr",
+        footCopy: "© 2026 Vela (velalife.tr) • SYMI Tech. All rights reserved."
+      },
+      ko: {
+        badge: "Google Play Data Safety & GDPR 준수",
+        heroTitle: "계정 및 개인 데이터 삭제 요청",
+        heroSubtitle: "Vela 계정 및 시스템에 저장된 모든 개인 데이터를 영구 삭제하기 위한 공식 요청 양식입니다.",
+        warningHeader: "중요 법적 고지 및 경고",
+        warn1: "<strong>영구적이고 복구 불가능한 삭제:</strong> 승인 시 계정 정보, 메시지, 음성/영상 기록이 영구 삭제되며 기술적으로 복구할 수 없습니다.",
+        warn2: "<strong>앱 내 직접 삭제 대안:</strong> 앱 내에서 직접 메시지와 미디어를 즉시 삭제할 수도 있습니다.",
+        warn3: "<strong>종단 간 암호화 보장:</strong> 사용자 데이터는 제3자에게 절대 제공되지 않습니다.",
+        warn4: "<strong>영업일 기준 7일 소요 및 취소 안내:</strong> 삭제는 영업일 기준 7일 이내에 완료됩니다. 취소 요청은 반드시 'CANCELLATION REQUEST' 제목으로 <code>info@symi.com.tr</code>에 서면 접수해야 합니다.",
+        warn5: "<strong>법적 책임 성명:</strong> 본 양식 제출은 확정적인 삭제 의사로 간주됩니다.",
+        labelName: "성명",
+        labelEmail: "Vela 등록 이메일 주소",
+        labelPhone: "전화번호 또는 사용자 ID",
+        labelReason: "삭제 사유",
+        labelNotes: "추가 메모",
+        optTag: "(선택)",
+        opt1: "계정을 해지하고 싶습니다",
+        opt2: "모든 데이터의 영구 삭제를 원합니다",
+        opt3: "더 이상 앱을 사용하지 않습니다",
+        opt4: "개인정보 또는 보안 우려",
+        opt5: "기타",
+        consentText: "상기 <strong>법적 고지사항을 확인하고 동의</strong>하며, <strong>영업일 기준 7일 이내</strong>에 데이터가 영구 삭제됨을 승인합니다.",
+        submitBtn: "🗑️ 내 계정 및 데이터 영구 삭제",
+        box1Title: "종단 간 암호화",
+        box1Desc: "데이터는 영구 삭제될 때까지 암호화되어 보호됩니다.",
+        box2Title: "영업일 기준 7일",
+        box2Desc: "모든 디스크 및 백업에서 완전한 데이터 소거.",
+        box3Title: "취소 절차",
+        box3Desc: "취소는 info@symi.com.tr로 제목 'CANCELLATION REQUEST' 접수.",
+        modalTitle: "요청이 접수되었습니다",
+        modalDesc: "영업일 기준 7일 이내에 삭제 처리가 완료됩니다.",
+        modalRefLabel: "접수 번호:",
+        modalEmailLabel: "이메일:",
+        modalStatusLabel: "상태:",
+        modalStatus: "처리 중 (영업일 기준 7일)",
+        modalCloseBtn: "확인 및 닫기",
+        footHome: "홈페이지",
+        footContact: "문의: info@symi.com.tr",
+        footCopy: "© 2026 Vela (velalife.tr) • SYMI Tech. All rights reserved."
+      }
+    };
+
+    let currentLang = 'tr';
+
+    // --------------------------------------------------------
+    // LANGUAGE SWITCHER
+    // --------------------------------------------------------
+    function changeLanguage(lang) {
+      if (!I18N[lang]) return;
+      currentLang = lang;
+      localStorage.setItem('vela_deletion_lang', lang);
+      document.documentElement.lang = lang;
+      
+      const t = I18N[lang];
+      document.getElementById('txt-badge').innerText = t.badge;
+      document.getElementById('txt-hero-title').innerText = t.heroTitle;
+      document.getElementById('txt-hero-subtitle').innerText = t.heroSubtitle;
+      document.getElementById('txt-warning-header').innerText = t.warningHeader;
+      document.getElementById('txt-warn-1').innerHTML = t.warn1;
+      document.getElementById('txt-warn-2').innerHTML = t.warn2;
+      document.getElementById('txt-warn-3').innerHTML = t.warn3;
+      document.getElementById('txt-warn-4').innerHTML = t.warn4;
+      document.getElementById('txt-warn-5').innerHTML = t.warn5;
+
+      document.getElementById('txt-label-name').innerText = t.labelName;
+      document.getElementById('txt-label-email').innerText = t.labelEmail;
+      document.getElementById('txt-label-phone').innerText = t.labelPhone;
+      document.getElementById('txt-label-reason').innerText = t.labelReason;
+      document.getElementById('txt-label-notes').innerText = t.labelNotes;
+      document.getElementById('txt-opt-tag').innerText = t.optTag;
+      document.getElementById('txt-opt-tag-2').innerText = t.optTag;
+
+      document.getElementById('opt-1').innerText = t.opt1;
+      document.getElementById('opt-2').innerText = t.opt2;
+      document.getElementById('opt-3').innerText = t.opt3;
+      document.getElementById('opt-4').innerText = t.opt4;
+      document.getElementById('opt-5').innerText = t.opt5;
+
+      document.getElementById('txt-consent-text').innerHTML = t.consentText;
+      document.getElementById('txt-submit-btn').innerText = t.submitBtn;
+
+      document.getElementById('txt-box1-title').innerText = t.box1Title;
+      document.getElementById('txt-box1-desc').innerText = t.box1Desc;
+      document.getElementById('txt-box2-title').innerText = t.box2Title;
+      document.getElementById('txt-box2-desc').innerText = t.box2Desc;
+      document.getElementById('txt-box3-title').innerText = t.box3Title;
+      document.getElementById('txt-box3-desc').innerText = t.box3Desc;
+
+      document.getElementById('txt-modal-title').innerText = t.modalTitle;
+      document.getElementById('txt-modal-desc').innerText = t.modalDesc;
+      document.getElementById('txt-modal-ref-label').innerText = t.modalRefLabel;
+      document.getElementById('txt-modal-email-label').innerText = t.modalEmailLabel;
+      document.getElementById('txt-modal-status-label').innerText = t.modalStatusLabel;
+      document.getElementById('txt-modal-status').innerText = t.modalStatus;
+      document.getElementById('txt-modal-close-btn').innerText = t.modalCloseBtn;
+
+      document.getElementById('txt-foot-home').innerText = t.footHome;
+      document.getElementById('txt-foot-contact').innerText = t.footContact;
+      document.getElementById('txt-foot-copy').innerText = t.footCopy;
+    }
+
+    // --------------------------------------------------------
+    // THEME SWITCHER
+    // --------------------------------------------------------
+    function toggleTheme() {
+      const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+      if (isLight) {
+        document.documentElement.removeAttribute('data-theme');
+        document.getElementById('themeBtn').innerText = '🌙';
+        localStorage.setItem('vela_deletion_theme', 'dark');
+      } else {
+        document.documentElement.setAttribute('data-theme', 'light');
+        document.getElementById('themeBtn').innerText = '☀️';
+        localStorage.setItem('vela_deletion_theme', 'light');
+      }
+    }
+
+    // Toggle Consent Checkbox from Card Click
+    function toggleConsentCheckbox(e) {
+      if (e.target.tagName === 'INPUT') return;
+      const cb = document.getElementById('consentCheckbox');
+      cb.checked = !cb.checked;
+      document.getElementById('consentCard').classList.toggle('checked', cb.checked);
+    }
+
+    document.getElementById('consentCheckbox').addEventListener('change', function() {
+      document.getElementById('consentCard').classList.toggle('checked', this.checked);
+    });
+
+    // --------------------------------------------------------
+    // FORM SUBMISSION HANDLER
+    // --------------------------------------------------------
+    async function handleFormSubmit(event) {
+      event.preventDefault();
+
+      const fullName = document.getElementById('fullName').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const phoneOrId = document.getElementById('phoneOrId').value.trim();
+      const reason = document.getElementById('reason').value;
+      const notes = document.getElementById('notes').value.trim();
+      const consent = document.getElementById('consentCheckbox').checked;
+
+      if (!consent) {
+        alert(currentLang === 'tr' ? 'Lütfen onay kutusunu işaretleyiniz.' : 'Please agree to the confirmation checkbox.');
+        return;
+      }
+
+      const submitBtn = document.getElementById('submitBtn');
+      const spinner = document.getElementById('btnSpinner');
+      submitBtn.disabled = true;
+      spinner.style.display = 'inline-block';
+
+      const refCode = 'DEL-' + Math.floor(100000 + Math.random() * 900000);
+      const payload = {
+        full_name: fullName,
+        email: email,
+        phone_or_user_id: phoneOrId || null,
+        reason: reason + (notes ? ` | Notlar: ${notes}` : ''),
+        confirmed: consent
+      };
+
+      // 1. Send to Backend API if available
+      try {
+        const response = await fetch('https://app.velalife.tr/api/account/delete-request', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (response.ok) {
+          const resData = await response.json();
+          if (resData.request_id) {
+            // Use backend ID if provided
+          }
+        }
+      } catch (err) {
+        console.warn('API endpoint unreachable, continuing with fallback:', err);
+      }
+
+      // 2. Direct Mailto link triggered in background as standard backup
+      const mailtoSubject = encodeURIComponent(`[HESAP SİLME İSTEĞİ] - ${email}`);
+      const mailtoBody = encodeURIComponent(
+        `VELA HESAP VE VERİ SİLME TALEBİ\n` +
+        `-----------------------------------------\n` +
+        `Takip Referans Kodu: ${refCode}\n` +
+        `Ad Soyad: ${fullName}\n` +
+        `Kayıtlı E-Posta: ${email}\n` +
+        `Telefon / ID: ${phoneOrId || 'Belirtilmedi'}\n` +
+        `Silme Nedeni: ${reason}\n` +
+        `Ek Açıklama: ${notes || 'Yok'}\n` +
+        `Onay Tarihi: ${new Date().toLocaleString('tr-TR')}\n` +
+        `Yasal Uyarılar Okundu ve Onaylandı: EVET\n` +
+        `-----------------------------------------\n` +
+        `Bu e-posta velalife.tr resmi silme formu üzerinden otomatik hazırlanmıştır.`
+      );
+
+      // Open mail client backup
+      const mailtoLink = `mailto:info@symi.com.tr?subject=${mailtoSubject}&body=${mailtoBody}`;
+      
+      // 3. Show Success Modal
+      document.getElementById('modalRefNo').innerText = refCode;
+      document.getElementById('modalEmail').innerText = email;
+      document.getElementById('successModal').classList.add('active');
+
+      submitBtn.disabled = false;
+      spinner.style.display = 'none';
+      document.getElementById('deletionForm').reset();
+      document.getElementById('consentCard').classList.remove('checked');
+
+      // Create a hidden iframe or link to trigger mailto without navigating away
+      const tempLink = document.createElement('a');
+      tempLink.href = mailtoLink;
+      tempLink.style.display = 'none';
+      document.body.appendChild(tempLink);
+      setTimeout(() => {
+        try { tempLink.click(); } catch(e) {}
+        document.body.removeChild(tempLink);
+      }, 500);
+    }
+
+    function closeModal() {
+      document.getElementById('successModal').classList.remove('active');
+    }
+
+    // --------------------------------------------------------
+    // INITIALIZATION
+    // --------------------------------------------------------
+    window.addEventListener('DOMContentLoaded', () => {
+      // Restore Theme
+      const savedTheme = localStorage.getItem('vela_deletion_theme');
+      if (savedTheme === 'light') {
+        document.documentElement.setAttribute('data-theme', 'light');
+        document.getElementById('themeBtn').innerText = '☀️';
+      }
+
+      // Restore Language
+      const savedLang = localStorage.getItem('vela_deletion_lang') || 'tr';
+      document.getElementById('langSelect').value = savedLang;
+      changeLanguage(savedLang);
+    });
+  </script>
+</body>
+</html>

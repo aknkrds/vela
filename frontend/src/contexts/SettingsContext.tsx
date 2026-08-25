@@ -3,13 +3,16 @@ import { storage } from '@/src/utils/storage';
 import { translations } from '../utils/translations';
 import { getColors, ThemeColors, ThemeType, COMFORT_FONT_SCALE } from '../utils/theme';
 
+export type SupportedLanguage = 'en' | 'tr' | 'hi' | 'ar' | 'de' | 'es' | 'ko' | 'ja';
+export const SUPPORTED_LANGUAGES: SupportedLanguage[] = ['en', 'tr', 'hi', 'ar', 'de', 'es', 'ko', 'ja'];
+
 interface SettingsContextType {
-  language: 'en' | 'tr';
+  language: SupportedLanguage;
   fontSizeScale: number;
   theme: ThemeType;
   comfortMode: boolean;
   colors: ThemeColors;
-  setLanguage: (lang: 'en' | 'tr') => Promise<void>;
+  setLanguage: (lang: SupportedLanguage) => Promise<void>;
   increaseFontScale: () => Promise<void>;
   decreaseFontScale: () => Promise<void>;
   resetFontScale: () => Promise<void>;
@@ -21,7 +24,7 @@ interface SettingsContextType {
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 
 export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [language, setLanguageState] = useState<'en' | 'tr'>('en');
+  const [language, setLanguageState] = useState<SupportedLanguage>('en');
   const [fontSizeScale, setFontSizeScaleState] = useState<number>(1.0);
   const [theme, setThemeState] = useState<ThemeType>('dark');
   const [comfortMode, setComfortModeState] = useState<boolean>(false);
@@ -37,8 +40,8 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const storedTheme = await storage.getItem('app_theme', 'dark');
       const storedComfort = await storage.getItem('app_comfort_mode', false);
       
-      if (storedLang === 'en' || storedLang === 'tr') {
-        setLanguageState(storedLang);
+      if (SUPPORTED_LANGUAGES.includes(storedLang as SupportedLanguage)) {
+        setLanguageState(storedLang as SupportedLanguage);
       }
       if (typeof storedScale === 'number') {
         setFontSizeScaleState(storedScale);
@@ -57,7 +60,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     loadSettings();
   }, []);
 
-  const setLanguage = async (lang: 'en' | 'tr') => {
+  const setLanguage = async (lang: SupportedLanguage) => {
     setLanguageState(lang);
     await storage.setItem('app_language', lang);
   };

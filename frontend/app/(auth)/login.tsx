@@ -20,6 +20,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 import { COMFORT_BUTTON_HEIGHT, COMFORT_ICON_SIZE, APP_VERSION } from '@/src/utils/theme';
+import { LanguageSelectorModal, LANGUAGES } from '@/src/components/LanguageSelectorModal';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -43,6 +44,9 @@ export default function Login() {
     t 
   } = useSettings();
   const router = useRouter();
+
+  const [langModalVisible, setLangModalVisible] = useState(false);
+  const currentLang = LANGUAGES.find(l => l.code === language) || LANGUAGES[0];
 
   const btnHeight = comfortMode ? COMFORT_BUTTON_HEIGHT : 56;
   const iconSize = comfortMode ? COMFORT_ICON_SIZE : 20;
@@ -135,11 +139,11 @@ export default function Login() {
             <View style={styles.settingItem}>
               <Ionicons name="language-outline" size={iconSize} color={colors.iconColor} />
               <TouchableOpacity 
-                onPress={() => setLanguage(language === 'en' ? 'tr' : 'en')}
+                onPress={() => setLangModalVisible(true)}
                 style={[styles.settingButton, { backgroundColor: colors.badgeBg }]}
               >
                 <Text style={[styles.settingButtonText, { fontSize: 13 * fontSizeScale, color: colors.textPrimary }]}>
-                  {language === 'en' ? 'EN 🇬🇧' : 'TR 🇹🇷'}
+                  {currentLang.code.toUpperCase()} {currentLang.flag}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -303,6 +307,10 @@ export default function Login() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+      <LanguageSelectorModal
+        visible={langModalVisible}
+        onClose={() => setLangModalVisible(false)}
+      />
     </SafeAreaView>
   );
 }

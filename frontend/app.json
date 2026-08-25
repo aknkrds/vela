@@ -2,7 +2,7 @@
   "expo": {
     "name": "Vela",
     "slug": "vela",
-    "version": "1.2.0",
+    "version": "1.7.2",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "vela",
@@ -11,14 +11,14 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.symi.vela",
-      "buildNumber": "6",
+      "buildNumber": "9",
       "infoPlist": {
         "NSCameraUsageDescription": "Vela video mesajlarınızı kaydetmek için kameranıza erişim ister.",
         "NSMicrophoneUsageDescription": "Vela sesli ve video mesajlarınızı kaydetmek için mikrofonunuza erişim ister."
       }
     },
     "android": {
-      "versionCode": 6,
+      "versionCode": 9,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#0a1628"
@@ -50,6 +50,13 @@
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#0a1628"
+        }
+      ],
+      [
+        "react-native-google-mobile-ads",
+        {
+          "androidAppId": "ca-app-pub-3940256099942544~3347511713",
+          "iosAppId": "ca-app-pub-3940256099942544~1458783783"
         }
       ]
     ],

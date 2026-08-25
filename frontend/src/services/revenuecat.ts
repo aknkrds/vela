@@ -12,24 +12,23 @@ export const configurePurchases = async (userId: string) => {
   try {
     if (Platform.OS === 'android') {
       if (!GOOGLE_API_KEY || GOOGLE_API_KEY.includes('placeholder')) {
-        console.log('[RevenueCat] Google API key is placeholder. Skipping native initialization in dev mode.');
+        // RevenueCat key not configured — skip native SDK init
         return;
       }
-      Purchases.setLogLevel(LOG_LEVEL.DEBUG);
+      Purchases.setLogLevel(__DEV__ ? LOG_LEVEL.DEBUG : LOG_LEVEL.ERROR);
       Purchases.configure({ apiKey: GOOGLE_API_KEY, appUserID: userId });
     } else if (Platform.OS === 'ios') {
       if (!APPLE_API_KEY || APPLE_API_KEY.includes('placeholder')) {
-        console.log('[RevenueCat] Apple API key is placeholder. Skipping native initialization in dev mode.');
+        // RevenueCat key not configured — skip native SDK init
         return;
       }
-      Purchases.setLogLevel(LOG_LEVEL.DEBUG);
+      Purchases.setLogLevel(__DEV__ ? LOG_LEVEL.DEBUG : LOG_LEVEL.ERROR);
       Purchases.configure({ apiKey: APPLE_API_KEY, appUserID: userId });
     } else {
       return;
     }
-    console.log(`RevenueCat initialized successfully for user: ${userId}`);
   } catch (error) {
-    console.warn('[RevenueCat] Could not initialize (expected in Expo Go without native build):', error);
+    // Expected to fail in Expo Go without native build
   }
 };
 
@@ -42,7 +41,6 @@ export const getSubscriptionStatus = async (): Promise<boolean> => {
     const entitlements = customerInfo.entitlements.active;
     return Object.keys(entitlements).length > 0;
   } catch (error) {
-    console.error('Error fetching subscription status:', error);
     return false;
   }
 };
@@ -58,7 +56,6 @@ export const getOfferings = async (): Promise<PurchasesOffering | null> => {
     }
     return null;
   } catch (error) {
-    console.error('Error fetching offerings:', error);
     return null;
   }
 };
@@ -73,7 +70,6 @@ export const purchasePackage = async (purchasesPackage: any) => {
     return customerInfo;
   } catch (error: any) {
     if (!error.userCancelled) {
-      console.error('Error during package purchase:', error);
       throw error;
     }
     return null;
@@ -88,7 +84,6 @@ export const restorePurchases = async () => {
     const customerInfo = await Purchases.restorePurchases();
     return customerInfo;
   } catch (error) {
-    console.error('Error restoring purchases:', error);
     throw error;
   }
 };

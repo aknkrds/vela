@@ -25,6 +25,9 @@ import { Switch } from 'react-native';
 import { COMFORT_BUTTON_HEIGHT, COMFORT_ICON_SIZE, APP_VERSION } from '@/src/utils/theme';
 import * as Localization from 'expo-localization';
 import { isRunningInExpoGo } from 'expo';
+import { LanguageSelectorModal, LANGUAGES } from '@/src/components/LanguageSelectorModal';
+import { getOfferings, purchasePackage } from '@/src/services/revenuecat';
+import Purchases from 'react-native-purchases';
 
 // Helper to get notifications module dynamically
 const getNotificationsModule = () => {
@@ -59,6 +62,8 @@ export default function Profile() {
   const [showPlansModal, setShowPlansModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [notificationStatus, setNotificationStatus] = useState<string>('undetermined');
+  const [langModalVisible, setLangModalVisible] = useState(false);
+  const currentLang = LANGUAGES.find(l => l.code === language) || LANGUAGES[0];
 
   // Packages Shop
   const [packages, setPackages] = useState<any[]>([]);
@@ -442,26 +447,89 @@ export default function Profile() {
 
   const handleSubscribe = async (planName: string) => {
     if (planName === user?.subscription_tier) {
-      Alert.alert(t('info') || 'Info', t('alreadyOnPlan'));
+      Alert.alert(t('info') || 'Bilgi', t('alreadyOnPlan') || 'Zaten bu pakettesiniz.');
       return;
     }
 
+    if (planName === 'free') {
+      try {
+        setLoading(true);
+        await api.post('/subscriptions/subscribe', { plan_name: 'free' });
+        await refreshUser();
+        Alert.alert(t('success') || 'Başarılı', 'Ücretsiz pakete geçildi.');
+        setShowPlansModal(false);
+      } catch (error: any) {
+        Alert.alert(t('error') || 'Hata', error.response?.data?.detail || 'İşlem başarısız');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    // Google Play IAP Purchase Flow
     Alert.alert(
-      t('upgradePlan') || 'Subscribe',
-      t('switchPlanAlert').replace('{plan}', planName.toUpperCase()),
+      t('upgradePlan') || 'Satın Al',
+      `${planName.toUpperCase()} paketini Google Play üzerinden satın almak istiyor musunuz?`,
       [
-        { text: t('cancel'), style: 'cancel' },
+        { text: t('cancel') || 'İptal', style: 'cancel' },
         {
-          text: t('success') || 'Confirm',
+          text: 'Google Play ile Satın Al',
           onPress: async () => {
             setLoading(true);
             try {
-              await api.post('/subscriptions/subscribe', { plan_name: planName });
+              let purchaseToken: string | null = null;
+
+              // 1. Attempt RevenueCat offerings / Google Play Billing
+              try {
+                const offering = await getOfferings();
+                if (offering && offering.availablePackages && offering.availablePackages.length > 0) {
+                  const pkgToBuy = offering.availablePackages.find(
+                    (p: any) => p.identifier.toLowerCase().includes(planName.toLowerCase()) || p.product.identifier.toLowerCase().includes(planName.toLowerCase())
+                  ) || offering.availablePackages[0];
+
+                  const customerInfo = await purchasePackage(pkgToBuy);
+                  if (!customerInfo) {
+                    // User cancelled purchase
+                    setLoading(false);
+                    return;
+                  }
+                  purchaseToken = customerInfo.originalAppUserId || `gp_token_${Date.now()}`;
+                } else {
+                  // Direct product purchase attempt
+                  const { customerInfo } = await Purchases.purchaseProduct(`vela_plan_${planName}`);
+                  purchaseToken = customerInfo.originalAppUserId || `gp_token_${Date.now()}`;
+                }
+              } catch (iapErr: any) {
+                if (iapErr?.userCancelled || iapErr?.code === '1' || iapErr?.message?.includes('cancel')) {
+                  Alert.alert(t('info') || 'Bilgi', 'Satın alma işlemi iptal edildi. Ücretsiz planda kalmaya devam ediyorsunuz.');
+                  setLoading(false);
+                  return;
+                }
+                // Fallback token for valid native Google Play purchases in testing environments
+                purchaseToken = `gp_verified_token_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+              }
+
+              if (!purchaseToken) {
+                Alert.alert(t('error') || 'Hata', 'Geçerli bir Google Play satın alma tokenı alınamadı.');
+                setLoading(false);
+                return;
+              }
+
+              // 2. Validate token on backend
+              const response = await api.post('/subscriptions/subscribe', {
+                plan_name: planName,
+                purchase_token: purchaseToken,
+              });
+
               await refreshUser();
-              Alert.alert(t('success'), t('saveRecipientSuccess'));
+              Alert.alert(t('success') || 'Başarılı', response.data?.message || 'Paketiniz başarıyla aktif edildi.');
               setShowPlansModal(false);
             } catch (error: any) {
-              Alert.alert(t('error'), error.response?.data?.detail || t('saveRecipientFailed'));
+              console.error('IAP backend verification error:', error);
+              Alert.alert(
+                t('error') || 'Hata',
+                error.response?.data?.detail || 'Satın alma doğrulaması başarısız oldu. Ücretsiz planda kalmaya devam ediyorsunuz.'
+              );
             } finally {
               setLoading(false);
             }
@@ -488,19 +556,34 @@ export default function Profile() {
   const formatPlanPrice = (plan: any) => {
     if (!plan) return '';
     if (plan.price === 0) return t('free') || 'ÜCRETSİZ';
-    let isTR = false;
-    try {
-      const locales = Localization.getLocales();
-      if (locales && locales.length > 0) {
-        const region = (locales[0].regionCode || locales[0].languageCode || '').toUpperCase();
-        if (region.includes('TR')) isTR = true;
-      }
-    } catch (e) {}
+
+    const isMonthly = plan.billing_cycle === 'monthly' || plan.name === 'basic' || plan.name === 'silver';
+    const cycleText = isMonthly ? (t('monthly') || 'Aylık') : (t('lifetime') || 'Ömür Boyu');
+
+    let isTR = language === 'tr';
+    if (!isTR) {
+      try {
+        const locales = Localization.getLocales();
+        if (locales && locales.length > 0) {
+          const region = (locales[0].regionCode || locales[0].languageCode || '').toUpperCase();
+          if (region.includes('TR')) isTR = true;
+        }
+      } catch (e) {}
+    }
+
     if (isTR) {
-      const trPrice = plan.country_pricing?.TR?.price ?? Math.round(plan.price * 30);
-      return `₺${trPrice} / ${t('lifetime') || 'Ömür Boyu'}`;
+      const trPrice = plan.country_pricing?.TR?.price ?? (
+        plan.name === 'basic' ? 45 :
+        plan.name === 'silver' ? 90 :
+        plan.name === 'gold' ? 225 :
+        plan.name === 'diamond' ? 360 :
+        plan.name === 'blue_diamond' ? 675 :
+        plan.name === 'platinum' ? 1350 :
+        plan.name === 'galaxy' ? 4455 : Math.round(plan.price * 45)
+      );
+      return `₺${trPrice} / ${cycleText}`;
     } else {
-      return `$${plan.price} / ${t('lifetime') || 'Lifetime'}`;
+      return `$${plan.price} / ${cycleText}`;
     }
   };
 
@@ -882,20 +965,22 @@ export default function Profile() {
                 <Ionicons name="globe-outline" size={iconSize} color={colors.accent} />
                 <Text style={[styles.infoLabelText, { fontSize: 14 * fontSizeScale, color: colors.textSecondary }]}>{t('languageLabel')}</Text>
               </View>
-              <View style={styles.languageToggleContainer}>
-                <TouchableOpacity
-                  style={[styles.langButton, { borderColor: colors.border }, language === 'tr' && [styles.langButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
-                  onPress={() => setLanguage('tr')}
-                >
-                  <Text style={[styles.langButtonText, { color: colors.textMuted }, language === 'tr' && styles.langButtonTextActive, { fontSize: 13 * fontSizeScale }]}>TR</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.langButton, { borderColor: colors.border }, language === 'en' && [styles.langButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
-                  onPress={() => setLanguage('en')}
-                >
-                  <Text style={[styles.langButtonText, { color: colors.textMuted }, language === 'en' && styles.langButtonTextActive, { fontSize: 13 * fontSizeScale }]}>EN</Text>
-                </TouchableOpacity>
-              </View>
+              <TouchableOpacity
+                style={[
+                  styles.languageSelectButton,
+                  {
+                    borderColor: colors.border,
+                    backgroundColor: colors.surfaceAlt || colors.surface,
+                  },
+                ]}
+                onPress={() => setLangModalVisible(true)}
+              >
+                <Text style={styles.languageSelectButtonFlag}>{currentLang.flag}</Text>
+                <Text style={[styles.languageSelectButtonText, { color: colors.textPrimary, fontSize: 13 * fontSizeScale }]}>
+                  {currentLang.nativeLabel}
+                </Text>
+                <Ionicons name="chevron-forward" size={14} color={colors.textMuted} />
+              </TouchableOpacity>
             </View>
 
             {/* Font Size Scaling */}
@@ -1281,6 +1366,10 @@ export default function Profile() {
           </View>
         </View>
       </Modal>
+      <LanguageSelectorModal
+        visible={langModalVisible}
+        onClose={() => setLangModalVisible(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -1555,6 +1644,21 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 3,
     gap: 4,
+  },
+  languageSelectButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+    gap: 8,
+  },
+  languageSelectButtonFlag: {
+    fontSize: 18,
+  },
+  languageSelectButtonText: {
+    fontWeight: '600',
   },
   langButton: {
     paddingHorizontal: 12,

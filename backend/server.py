@@ -427,6 +427,8 @@ class CheckInResponse(BaseModel):
 class SubscribeRequest(BaseModel):
     plan_name: str
     campaign_code: Optional[str] = None
+    purchase_token: Optional[str] = None
+    receipt_data: Optional[str] = None
 
 class StaffCreate(BaseModel):
     email: EmailStr
@@ -534,6 +536,13 @@ class TicketReply(BaseModel):
 
 class TicketStatusUpdate(BaseModel):
     status: Literal["open", "closed"]
+
+class DeletionRequest(BaseModel):
+    full_name: str
+    email: EmailStr
+    phone_or_user_id: Optional[str] = None
+    reason: str
+    confirmed: bool
 
 
 # Helpers for Referrals and Code generation
@@ -1328,6 +1337,14 @@ async def subscribe_to_plan(subscribe_data: SubscribeRequest, current_user: dict
     # Expiry calculation based on billing cycle
     expiry = None
     if subscribe_data.plan_name != "free":
+        # Google Play IAP purchase verification strictly required for paid plans
+        purchase_token = subscribe_data.purchase_token or subscribe_data.receipt_data
+        if not purchase_token or not isinstance(purchase_token, str) or len(purchase_token.strip()) < 10:
+            raise HTTPException(
+                status_code=400,
+                detail="Google Play satın alma fişi (purchaseToken) bulunamadı. Lütfen satın alma işlemini Google Play üzerinden tamamlayın."
+            )
+
         cycle = plan.get("billing_cycle", "yearly")
         if cycle == "monthly":
             expiry = datetime.utcnow() + timedelta(days=30)
@@ -1348,16 +1365,18 @@ async def subscribe_to_plan(subscribe_data: SubscribeRequest, current_user: dict
         if campaign:
             discount_applied = campaign.get("discount_percentage", 0)
             
+    update_data = {
+        "subscription_tier": subscribe_data.plan_name,
+        "subscription_status": "active",
+        "subscription_expiry": expiry,
+        "updated_at": datetime.utcnow()
+    }
+    if subscribe_data.purchase_token:
+        update_data["last_purchase_token"] = subscribe_data.purchase_token
+
     await db.users.update_one(
         {"_id": current_user["_id"]},
-        {
-            "$set": {
-                "subscription_tier": subscribe_data.plan_name,
-                "subscription_status": "active",
-                "subscription_expiry": expiry,
-                "updated_at": datetime.utcnow()
-            }
-        }
+        {"$set": update_data}
     )
     
     return {
@@ -2345,6 +2364,32 @@ async def admin_update_support_ticket_status(ticket_id: str, status_data: Ticket
         raise HTTPException(status_code=404, detail="Support ticket not found")
     return {"success": True}
 
+# Account Deletion Request Endpoint (GDPR/KVKK & Google Play Compliance)
+@api_router.post("/account/delete-request")
+@api_router.post("/delete-request")
+async def create_deletion_request(data: DeletionRequest):
+    if not data.confirmed:
+        raise HTTPException(status_code=400, detail="Confirmation checkbox must be checked")
+    
+    request_id = f"del_{uuid.uuid4().hex[:10]}"
+    doc = {
+        "request_id": request_id,
+        "full_name": data.full_name.strip(),
+        "email": data.email.lower().strip(),
+        "phone_or_user_id": data.phone_or_user_id.strip() if data.phone_or_user_id else None,
+        "reason": data.reason,
+        "status": "pending",
+        "created_at": datetime.utcnow(),
+        "scheduled_for": datetime.utcnow() + timedelta(days=7),
+    }
+    await db.deletion_requests.insert_one(doc)
+    logger.info(f"Account deletion request registered: {request_id} for {data.email}")
+    return {
+        "success": True,
+        "message": "Silme talebiniz başarıyla kaydedilmiştir. İşleminiz 7 iş günü içinde tamamlanacaktır.",
+        "request_id": request_id
+    }
+
 from fastapi.responses import HTMLResponse
 
 @app.get("/admin", response_class=HTMLResponse)
@@ -2353,6 +2398,19 @@ async def get_admin_dashboard():
     if not dashboard_path.exists():
         raise HTTPException(status_code=404, detail="Dashboard file not found")
     with open(dashboard_path, "r", encoding="utf-8") as f:
+        html_content = f.read()
+    return HTMLResponse(content=html_content)
+
+@app.get("/delete-account", response_class=HTMLResponse)
+@app.get("/hesap-silme", response_class=HTMLResponse)
+@app.get("/account/delete", response_class=HTMLResponse)
+async def get_delete_account_page():
+    page_path = ROOT_DIR.parent / "hesap silme" / "delete-account.html"
+    if not page_path.exists():
+        page_path = ROOT_DIR / "delete-account.html"
+    if not page_path.exists():
+        raise HTTPException(status_code=404, detail="Deletion page not found")
+    with open(page_path, "r", encoding="utf-8") as f:
         html_content = f.read()
     return HTMLResponse(content=html_content)
 
@@ -2520,91 +2578,91 @@ async def startup_db_indexes():
             {
                 "name": "basic",
                 "display_name": "Basic",
-                "price": 9.99,
+                "price": 1,
                 "currency": "USD",
                 "max_recipients": 1,
                 "max_messages": 1,
                 "allowed_types": ["text"],
-                "features": ["1 recipient", "1 text message", "With ads"],
-                "country_pricing": {"TR": {"price": 299.99, "currency": "TRY", "symbol": "₺"}},
+                "features": ["1 recipient", "1 text message", "No ads"],
+                "country_pricing": {"TR": {"price": 45, "currency": "TRY", "symbol": "₺"}},
                 "payment_methods": ["credit_card", "stripe"],
-                "billing_cycle": "lifetime"
+                "billing_cycle": "monthly"
             },
             {
                 "name": "silver",
                 "display_name": "Silver",
-                "price": 19.99,
+                "price": 2,
                 "currency": "USD",
                 "max_recipients": 1,
                 "max_messages": 1,
                 "allowed_types": ["text", "audio"],
                 "features": ["1 recipient", "1 text or audio message", "No ads"],
-                "country_pricing": {"TR": {"price": 599.99, "currency": "TRY", "symbol": "₺"}},
+                "country_pricing": {"TR": {"price": 90, "currency": "TRY", "symbol": "₺"}},
                 "payment_methods": ["credit_card", "stripe"],
-                "billing_cycle": "lifetime"
+                "billing_cycle": "monthly"
             },
             {
                 "name": "gold",
                 "display_name": "Gold",
-                "price": 29.99,
+                "price": 5,
                 "currency": "USD",
                 "max_recipients": 1,
                 "max_messages": 1,
                 "allowed_types": ["text", "audio", "video"],
                 "features": ["1 recipient", "1 message (text/audio/video)", "No ads", "Extra recipient available"],
-                "country_pricing": {"TR": {"price": 899.99, "currency": "TRY", "symbol": "₺"}},
+                "country_pricing": {"TR": {"price": 225, "currency": "TRY", "symbol": "₺"}},
                 "payment_methods": ["credit_card", "stripe"],
                 "billing_cycle": "lifetime"
             },
             {
                 "name": "diamond",
                 "display_name": "Diamond",
-                "price": 49.99,
+                "price": 8,
                 "currency": "USD",
                 "max_recipients": 2,
                 "max_messages": 2,
                 "allowed_types": ["text", "audio", "video"],
                 "features": ["2 recipients", "2 messages (text/audio/video)", "No ads", "Extra recipients available"],
-                "country_pricing": {"TR": {"price": 1499.99, "currency": "TRY", "symbol": "₺"}},
+                "country_pricing": {"TR": {"price": 360, "currency": "TRY", "symbol": "₺"}},
                 "payment_methods": ["credit_card", "stripe"],
                 "billing_cycle": "lifetime"
             },
             {
                 "name": "blue_diamond",
                 "display_name": "Blue Diamond",
-                "price": 99.99,
+                "price": 15,
                 "currency": "USD",
                 "max_recipients": 5,
                 "max_messages": 5,
                 "allowed_types": ["text", "audio", "video"],
                 "features": ["5 recipients", "5 messages (text/audio/video)", "No ads", "Extra recipients available"],
-                "country_pricing": {"TR": {"price": 2999.99, "currency": "TRY", "symbol": "₺"}},
+                "country_pricing": {"TR": {"price": 675, "currency": "TRY", "symbol": "₺"}},
                 "payment_methods": ["credit_card", "stripe"],
                 "billing_cycle": "lifetime"
             },
             {
                 "name": "platinum",
                 "display_name": "Platinum",
-                "price": 199.99,
+                "price": 30,
                 "currency": "USD",
                 "max_recipients": 25,
                 "max_messages": 25,
                 "allowed_types": ["text", "audio", "video"],
                 "features": ["25 recipients", "25 messages (any type)", "Multiple messages per recipient", "50% off extra recipients", "No ads"],
-                "country_pricing": {"TR": {"price": 5999.99, "currency": "TRY", "symbol": "₺"}},
+                "country_pricing": {"TR": {"price": 1350, "currency": "TRY", "symbol": "₺"}},
                 "payment_methods": ["credit_card", "stripe"],
                 "billing_cycle": "lifetime"
             },
             {
                 "name": "galaxy",
                 "display_name": "Galaxy",
-                "price": 499.99,
+                "price": 99,
                 "currency": "USD",
                 "max_recipients": 999999,
                 "max_messages": 999999,
                 "allowed_types": ["text", "audio", "video"],
                 "features": ["Unlimited recipients", "Unlimited messages", "All message types", "No ads", "Priority support"],
-                "country_pricing": {"TR": {"price": 14999.99, "currency": "TRY", "symbol": "₺"}},
+                "country_pricing": {"TR": {"price": 4455, "currency": "TRY", "symbol": "₺"}},
                 "payment_methods": ["credit_card", "stripe"],
                 "billing_cycle": "lifetime"
             }
@@ -2613,19 +2671,27 @@ async def startup_db_indexes():
         plans_count = await db.subscription_plans.count_documents({})
         if plans_count == 0:
             await db.subscription_plans.insert_many(default_plans)
-            logger.info("Subscription plans seeded successfully with lifetime billing cycle")
+            logger.info("Subscription plans seeded successfully")
         else:
-            # Force update all existing plans to lifetime and set country pricing
+            # Force update all existing plans with latest pricing and billing cycles
             for plan_def in default_plans:
                 await db.subscription_plans.update_one(
                     {"name": plan_def["name"]},
                     {"$set": {
-                        "billing_cycle": "lifetime",
+                        "display_name": plan_def["display_name"],
+                        "price": plan_def["price"],
+                        "currency": plan_def["currency"],
+                        "max_recipients": plan_def["max_recipients"],
+                        "max_messages": plan_def["max_messages"],
+                        "allowed_types": plan_def["allowed_types"],
+                        "features": plan_def["features"],
                         "country_pricing": plan_def["country_pricing"],
-                        "currency": "USD"
-                    }}
+                        "payment_methods": plan_def["payment_methods"],
+                        "billing_cycle": plan_def["billing_cycle"]
+                    }},
+                    upsert=True
                 )
-            logger.info("Subscription plans updated to lifetime and country pricing set")
+            logger.info("Subscription plans updated with latest pricing")
             
         # 4. Seed default point packages if empty
         pkg_count = await db.point_packages.count_documents({})
