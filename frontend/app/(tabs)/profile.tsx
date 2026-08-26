@@ -52,6 +52,17 @@ interface SubscriptionPlan {
   features: string[];
 }
 
+export const TIER_RANKS: Record<string, number> = {
+  free: 0,
+  basic: 1,
+  silver: 2,
+  gold: 3,
+  diamond: 4,
+  blue_diamond: 5,
+  platinum: 6,
+  galaxy: 7,
+};
+
 export default function Profile() {
   const { user, logout, refreshUser } = useAuth();
   const { fontSizeScale, t, language, setLanguage, increaseFontScale, decreaseFontScale, resetFontScale, theme, setTheme, comfortMode, toggleComfortMode, colors } = useSettings();
@@ -446,8 +457,20 @@ export default function Profile() {
   };
 
   const handleSubscribe = async (planName: string) => {
-    if (planName === user?.subscription_tier) {
+    const currentTier = user?.subscription_tier || 'free';
+    const currentRank = TIER_RANKS[currentTier] ?? 0;
+    const targetRank = TIER_RANKS[planName] ?? 0;
+
+    if (planName === currentTier) {
       Alert.alert(t('info') || 'Bilgi', t('alreadyOnPlan') || 'Zaten bu pakettesiniz.');
+      return;
+    }
+
+    if (targetRank < currentRank) {
+      Alert.alert(
+        t('info') || 'Bilgi',
+        t('cannotDowngradePlan') || 'Daha düşük bir pakete doğrudan geçiş yapılamaz. Yalnızca üst paketlere yükseltme yapabilirsiniz.'
+      );
       return;
     }
 
@@ -493,11 +516,14 @@ export default function Profile() {
                     setLoading(false);
                     return;
                   }
-                  purchaseToken = customerInfo.originalAppUserId || `gp_token_${Date.now()}`;
+                  // Use real purchase token from RevenueCat — no fallback allowed
+                  const latestTransaction = customerInfo.nonSubscriptionTransactions?.[customerInfo.nonSubscriptionTransactions.length - 1];
+                  purchaseToken = latestTransaction?.transactionIdentifier || customerInfo.originalAppUserId;
                 } else {
                   // Direct product purchase attempt
                   const { customerInfo } = await Purchases.purchaseProduct(`vela_plan_${planName}`);
-                  purchaseToken = customerInfo.originalAppUserId || `gp_token_${Date.now()}`;
+                  const latestTransaction = customerInfo.nonSubscriptionTransactions?.[customerInfo.nonSubscriptionTransactions.length - 1];
+                  purchaseToken = latestTransaction?.transactionIdentifier || customerInfo.originalAppUserId;
                 }
               } catch (iapErr: any) {
                 if (iapErr?.userCancelled || iapErr?.code === '1' || iapErr?.message?.includes('cancel')) {
@@ -505,8 +531,14 @@ export default function Profile() {
                   setLoading(false);
                   return;
                 }
-                // Fallback token for valid native Google Play purchases in testing environments
-                purchaseToken = `gp_verified_token_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+                // All other IAP errors: stop the flow, do NOT generate fake tokens
+                console.error('Google Play IAP error:', iapErr);
+                Alert.alert(
+                  t('error') || 'Hata',
+                  'Google Play satın alma işlemi başarısız oldu. Lütfen tekrar deneyin veya internet bağlantınızı kontrol edin.'
+                );
+                setLoading(false);
+                return;
               }
 
               if (!purchaseToken) {
@@ -1227,59 +1259,73 @@ export default function Profile() {
             </View>
 
             <ScrollView style={styles.plansScroll} contentContainerStyle={{ paddingBottom: 140 }}>
-              {plans.map((plan) => (
-                <View
-                  key={plan.name}
-                  style={[
-                    styles.planCard,
-                    { backgroundColor: colors.surface, borderColor: colors.border },
-                    plan.name === user?.subscription_tier && [styles.planCardCurrent, { borderColor: colors.accent }],
-                  ]}
-                >
-                  <View style={[styles.planHeader, { borderBottomColor: colors.border }]}>
-                    <View>
-                      <Text style={[styles.planTitle, { fontSize: 18 * fontSizeScale, color: colors.textPrimary }]}>{plan.display_name}</Text>
-                      <Text style={[styles.planPriceText, { fontSize: 16 * fontSizeScale, color: colors.accent }]}>
-                        {formatPlanPrice(plan)}
-                      </Text>
-                    </View>
-                    {plan.name === user?.subscription_tier && (
-                      <View style={[styles.currentBadge, { backgroundColor: colors.accent }]}>
-                        <Text style={[styles.currentBadgeText, { fontSize: 10 * fontSizeScale }]}>
-                          {t('currentPlanLabel').toUpperCase()}
+              {plans.map((plan) => {
+                const currentTier = user?.subscription_tier || 'free';
+                const currentRank = TIER_RANKS[currentTier] ?? 0;
+                const planRank = TIER_RANKS[plan.name] ?? 0;
+                const isCurrent = plan.name === currentTier;
+                const isLower = planRank < currentRank;
+                const isSelectDisabled = loading || isCurrent || isLower;
+
+                return (
+                  <View
+                    key={plan.name}
+                    style={[
+                      styles.planCard,
+                      { backgroundColor: colors.surface, borderColor: colors.border },
+                      isCurrent && [styles.planCardCurrent, { borderColor: colors.accent }],
+                      isLower && { opacity: 0.6 },
+                    ]}
+                  >
+                    <View style={[styles.planHeader, { borderBottomColor: colors.border }]}>
+                      <View>
+                        <Text style={[styles.planTitle, { fontSize: 18 * fontSizeScale, color: colors.textPrimary }]}>{plan.display_name}</Text>
+                        <Text style={[styles.planPriceText, { fontSize: 16 * fontSizeScale, color: isLower ? colors.textMuted : colors.accent }]}>
+                          {formatPlanPrice(plan)}
                         </Text>
                       </View>
-                    )}
-                  </View>
+                      {isCurrent && (
+                        <View style={[styles.currentBadge, { backgroundColor: colors.accent }]}>
+                          <Text style={[styles.currentBadgeText, { fontSize: 10 * fontSizeScale }]}>
+                            {t('currentPlanLabel').toUpperCase()}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
 
-                  <View style={styles.planFeatures}>
-                    {plan.features.map((feature, index) => (
-                      <View key={index} style={styles.planFeatureItem}>
-                        <Ionicons name="checkmark" size={16} color={colors.success} />
-                        <Text style={[styles.planFeatureText, { fontSize: 14 * fontSizeScale, color: colors.textSecondary }]}>{feature}</Text>
-                      </View>
-                    ))}
-                  </View>
+                    <View style={styles.planFeatures}>
+                      {plan.features.map((feature, index) => (
+                        <View key={index} style={styles.planFeatureItem}>
+                          <Ionicons name="checkmark" size={16} color={isLower ? colors.textMuted : colors.success} />
+                          <Text style={[styles.planFeatureText, { fontSize: 14 * fontSizeScale, color: colors.textSecondary }]}>{feature}</Text>
+                        </View>
+                      ))}
+                    </View>
 
-                  <TouchableOpacity
-                    style={[
-                      styles.selectButton,
-                      { backgroundColor: colors.accent, height: btnHeight, justifyContent: 'center' },
-                      plan.name === user?.subscription_tier && [styles.selectButtonDisabled, { backgroundColor: colors.badgeBg }],
-                    ]}
-                    onPress={() => handleSubscribe(plan.name)}
-                    disabled={loading || plan.name === user?.subscription_tier}
-                  >
-                    {loading ? (
-                      <ActivityIndicator color="#fff" size="small" />
-                    ) : (
-                      <Text style={[styles.selectButtonText, { fontSize: 16 * fontSizeScale, color: plan.name === user?.subscription_tier ? colors.textMuted : '#fff' }]}>
-                        {plan.name === user?.subscription_tier ? t('currentPlanLabel') : t('selectPlanLabel')}
-                      </Text>
-                    )}
-                  </TouchableOpacity>
-                </View>
-              ))}
+                    <TouchableOpacity
+                      style={[
+                        styles.selectButton,
+                        { backgroundColor: colors.accent, height: btnHeight, justifyContent: 'center' },
+                        (isCurrent || isLower) && [styles.selectButtonDisabled, { backgroundColor: colors.badgeBg }],
+                      ]}
+                      onPress={() => handleSubscribe(plan.name)}
+                      disabled={isSelectDisabled}
+                    >
+                      {loading ? (
+                        <ActivityIndicator color="#fff" size="small" />
+                      ) : (
+                        <Text style={[styles.selectButtonText, { fontSize: 16 * fontSizeScale, color: (isCurrent || isLower) ? colors.textMuted : '#fff' }]}>
+                          {isCurrent
+                            ? t('currentPlanLabel')
+                            : isLower
+                            ? (t('lowerPlanLabel') || 'Daha Düşük Paket')
+                            : t('selectPlanLabel')}
+                        </Text>
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                );
+              })}
             </ScrollView>
           </View>
         </View>

@@ -308,26 +308,114 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
+# Subscription Tier Hierarchy
+TIER_RANKS = {
+    "free": 0,
+    "basic": 1,
+    "silver": 2,
+    "gold": 3,
+    "diamond": 4,
+    "blue_diamond": 5,
+    "platinum": 6,
+    "galaxy": 7
+}
+
+async def verify_external_subscription_status(user: dict) -> bool:
+    """
+    Verifies Google Play / RevenueCat subscriber status to check if a monthly/recurring subscription
+    has been renewed or if payment succeeded/failed.
+    If renewed: extends subscription_expiry in DB and returns True.
+    If expired/unpaid: terminates subscription, downgrades user to 'free' tier and returns False.
+    """
+    if not user:
+        return False
+        
+    app_user_id = user.get("user_id") or str(user.get("_id"))
+    revenuecat_secret = os.getenv("REVENUECAT_SECRET_KEY") or os.getenv("REVENUECAT_V2_SECRET_KEY")
+    
+    renewed = False
+    new_expiry = None
+
+    if revenuecat_secret and app_user_id:
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                url = f"https://api.revenuecat.com/v1/subscribers/{app_user_id}"
+                headers = {
+                    "Authorization": f"Bearer {revenuecat_secret}",
+                    "Accept": "application/json"
+                }
+                resp = await client.get(url, headers=headers)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    subscriber = data.get("subscriber", {})
+                    entitlements = subscriber.get("entitlements", {})
+                    
+                    for ent_name, ent_info in entitlements.items():
+                        expires_date_str = ent_info.get("expires_date")
+                        if expires_date_str:
+                            try:
+                                exp_dt = datetime.fromisoformat(expires_date_str.replace("Z", "+00:00")).astimezone(timezone.utc).replace(tzinfo=None)
+                                if exp_dt > datetime.utcnow():
+                                    renewed = True
+                                    new_expiry = exp_dt
+                                    break
+                            except Exception:
+                                pass
+        except Exception as e:
+            logging.warning(f"RevenueCat subscriber lookup failed for user {user.get('email')}: {e}")
+
+    if renewed and new_expiry:
+        await db.users.update_one(
+            {"_id": user["_id"]},
+            {"$set": {
+                "subscription_status": "active",
+                "subscription_expiry": new_expiry,
+                "updated_at": datetime.utcnow()
+            }}
+        )
+        user["subscription_status"] = "active"
+        user["subscription_expiry"] = new_expiry
+        logging.info(f"User {user.get('email')} subscription renewed via RevenueCat until {new_expiry}")
+        return True
+    else:
+        await db.users.update_one(
+            {"_id": user["_id"]},
+            {
+                "$set": {
+                    "subscription_tier": "free",
+                    "subscription_status": "expired",
+                    "subscription_expiry": None,
+                    "updated_at": datetime.utcnow()
+                },
+                "$push": {
+                    "subscription_history": {
+                        "event": "subscription_expired",
+                        "previous_tier": user.get("subscription_tier"),
+                        "downgraded_to": "free",
+                        "date": datetime.utcnow()
+                    }
+                }
+            }
+        )
+        user["subscription_tier"] = "free"
+        user["subscription_status"] = "expired"
+        user["subscription_expiry"] = None
+        logging.info(f"User {user.get('email')} subscription expired. Downgraded to free plan.")
+        return False
+
 async def check_user_subscription_expiry(user: dict) -> dict:
     if not user:
         return user
+    tier = user.get("subscription_tier", "free")
+    if tier == "free":
+        return user
+
     expiry = user.get("subscription_expiry")
     if expiry:
         if expiry.tzinfo is not None:
             expiry = expiry.astimezone(timezone.utc).replace(tzinfo=None)
         if datetime.utcnow() > expiry:
-            await db.users.update_one(
-                {"_id": user["_id"]},
-                {"$set": {
-                    "subscription_tier": "free",
-                    "subscription_status": "inactive",
-                    "subscription_expiry": None,
-                    "updated_at": datetime.utcnow()
-                }}
-            )
-            user["subscription_tier"] = "free"
-            user["subscription_status"] = "inactive"
-            user["subscription_expiry"] = None
+            await verify_external_subscription_status(user)
     return user
 
 async def get_current_user(authorization: Optional[str] = Header(None)):
@@ -1334,8 +1422,23 @@ async def subscribe_to_plan(subscribe_data: SubscribeRequest, current_user: dict
     if not plan:
         raise HTTPException(status_code=400, detail="Invalid plan name")
     
+    current_tier = current_user.get("subscription_tier", "free")
+    current_status = current_user.get("subscription_status", "inactive")
+    current_rank = TIER_RANKS.get(current_tier, 0)
+    target_rank = TIER_RANKS.get(subscribe_data.plan_name, 0)
+
+    # Disallow downgrading if the user currently holds an active paid plan
+    if current_status == "active" and current_tier != "free" and target_rank < current_rank:
+        raise HTTPException(
+            status_code=400,
+            detail="Daha düşük bir pakete doğrudan geçiş yapılamaz. Yalnızca üst paketlere yükseltme yapabilirsiniz."
+        )
+
     # Expiry calculation based on billing cycle
+    cycle = plan.get("billing_cycle", "monthly" if subscribe_data.plan_name in ["basic", "silver"] else "lifetime")
     expiry = None
+    started_at = datetime.utcnow()
+
     if subscribe_data.plan_name != "free":
         # Google Play IAP purchase verification strictly required for paid plans
         purchase_token = subscribe_data.purchase_token or subscribe_data.receipt_data
@@ -1345,15 +1448,17 @@ async def subscribe_to_plan(subscribe_data: SubscribeRequest, current_user: dict
                 detail="Google Play satın alma fişi (purchaseToken) bulunamadı. Lütfen satın alma işlemini Google Play üzerinden tamamlayın."
             )
 
-        cycle = plan.get("billing_cycle", "yearly")
         if cycle == "monthly":
-            expiry = datetime.utcnow() + timedelta(days=30)
+            expiry = started_at + timedelta(days=30)
         elif cycle == "yearly":
-            expiry = datetime.utcnow() + timedelta(days=365)
+            expiry = started_at + timedelta(days=365)
         elif cycle == "lifetime":
             expiry = None
         else:
-            expiry = datetime.utcnow() + timedelta(days=365)
+            expiry = started_at + timedelta(days=30)
+    else:
+        cycle = "lifetime"
+        expiry = None
             
     # Check if a campaign code was passed
     discount_applied = 0
@@ -1365,9 +1470,21 @@ async def subscribe_to_plan(subscribe_data: SubscribeRequest, current_user: dict
         if campaign:
             discount_applied = campaign.get("discount_percentage", 0)
             
+    subscription_record = {
+        "plan_name": subscribe_data.plan_name,
+        "billing_cycle": cycle,
+        "subscription_started_at": started_at,
+        "subscription_expiry": expiry,
+        "purchase_token": subscribe_data.purchase_token,
+        "status": "active",
+        "created_at": started_at
+    }
+
     update_data = {
         "subscription_tier": subscribe_data.plan_name,
         "subscription_status": "active",
+        "billing_cycle": cycle,
+        "subscription_started_at": started_at,
         "subscription_expiry": expiry,
         "updated_at": datetime.utcnow()
     }
@@ -1376,13 +1493,18 @@ async def subscribe_to_plan(subscribe_data: SubscribeRequest, current_user: dict
 
     await db.users.update_one(
         {"_id": current_user["_id"]},
-        {"$set": update_data}
+        {
+            "$set": update_data,
+            "$push": {"subscription_history": subscription_record}
+        }
     )
     
     return {
         "success": True,
         "message": f"Successfully subscribed to {subscribe_data.plan_name} plan",
         "plan": subscribe_data.plan_name,
+        "billing_cycle": cycle,
+        "started_at": started_at,
         "expiry": expiry,
         "discount_applied": discount_applied
     }
@@ -2438,43 +2560,93 @@ async def revenuecat_webhook(request: Request, authorization: Optional[str] = He
     if not app_user_id:
         return {"status": "ignored", "detail": "No app_user_id in event"}
         
-    # Find user in MongoDB
-    user = await db.users.find_one({"user_id": app_user_id})
+    # Find user in MongoDB by user_id, _id, or email
+    user_query = [{"user_id": app_user_id}, {"email": app_user_id}]
+    if ObjectId.is_valid(app_user_id):
+        user_query.append({"_id": ObjectId(app_user_id)})
+    user = await db.users.find_one({"$or": user_query})
+    
     if not user:
-        logging.warning(f"RevenueCat webhook: user_id '{app_user_id}' not found in database")
+        logging.warning(f"RevenueCat webhook: user identifier '{app_user_id}' not found in database")
         return {"status": "ignored", "detail": f"User {app_user_id} not found in DB"}
         
-    if event_type in ["INITIAL_PURCHASE", "RENEWAL", "NON_RENEWING_PURCHASE"]:
-        entitlement_ids = event.get("entitlement_ids", [])
-        subscription_tier = "premium" if entitlement_ids else "free"
+    product_id = event.get("product_id") or ""
+    entitlement_ids = event.get("entitlement_ids", [])
+    
+    # Resolve exact tier from product_id and entitlements
+    combined_info = f"{product_id} {' '.join(entitlement_ids)}".lower()
+    if "galaxy" in combined_info:
+        subscription_tier = "galaxy"
+    elif "platinum" in combined_info:
+        subscription_tier = "platinum"
+    elif "blue_diamond" in combined_info or "blue diamond" in combined_info:
+        subscription_tier = "blue_diamond"
+    elif "diamond" in combined_info:
+        subscription_tier = "diamond"
+    elif "gold" in combined_info:
+        subscription_tier = "gold"
+    elif "silver" in combined_info:
+        subscription_tier = "silver"
+    elif "basic" in combined_info:
+        subscription_tier = "basic"
+    else:
+        subscription_tier = "basic" if entitlement_ids else "free"
         
+    if event_type in ["INITIAL_PURCHASE", "RENEWAL", "NON_RENEWING_PURCHASE", "PRODUCT_CHANGE"]:
         expiration_ms = event.get("expiration_at_ms")
         expiry_date = None
         if expiration_ms:
             expiry_date = datetime.fromtimestamp(expiration_ms / 1000.0, tz=timezone.utc).replace(tzinfo=None)
             
+        cycle = "monthly" if subscription_tier in ["basic", "silver"] else "lifetime"
+        if expiry_date and not expiration_ms:
+            cycle = "monthly"
+            
+        subscription_record = {
+            "event": event_type.lower(),
+            "plan_name": subscription_tier,
+            "billing_cycle": cycle,
+            "subscription_expiry": expiry_date,
+            "status": "active",
+            "date": datetime.utcnow()
+        }
+
         await db.users.update_one(
-            {"user_id": app_user_id},
-            {"$set": {
-                "subscription_tier": subscription_tier,
-                "subscription_status": "active",
-                "subscription_expiry": expiry_date,
-                "updated_at": datetime.utcnow()
-            }}
+            {"_id": user["_id"]},
+            {
+                "$set": {
+                    "subscription_tier": subscription_tier,
+                    "subscription_status": "active",
+                    "billing_cycle": cycle,
+                    "subscription_expiry": expiry_date,
+                    "updated_at": datetime.utcnow()
+                },
+                "$push": {"subscription_history": subscription_record}
+            }
         )
-        logging.info(f"User {app_user_id} upgraded/renewed to {subscription_tier} via RevenueCat")
+        logging.info(f"User {user.get('email')} upgraded/renewed to {subscription_tier} via RevenueCat webhook")
         
-    elif event_type in ["CANCELLATION", "EXPIRATION"]:
+    elif event_type in ["CANCELLATION", "EXPIRATION", "BILLING_ISSUE"]:
         await db.users.update_one(
-            {"user_id": app_user_id},
-            {"$set": {
-                "subscription_tier": "free",
-                "subscription_status": "inactive",
-                "subscription_expiry": None,
-                "updated_at": datetime.utcnow()
-            }}
+            {"_id": user["_id"]},
+            {
+                "$set": {
+                    "subscription_tier": "free",
+                    "subscription_status": "expired" if event_type == "EXPIRATION" else "inactive",
+                    "subscription_expiry": None,
+                    "updated_at": datetime.utcnow()
+                },
+                "$push": {
+                    "subscription_history": {
+                        "event": event_type.lower(),
+                        "previous_tier": user.get("subscription_tier"),
+                        "downgraded_to": "free",
+                        "date": datetime.utcnow()
+                    }
+                }
+            }
         )
-        logging.info(f"User {app_user_id} subscription expired or cancelled")
+        logging.info(f"User {user.get('email')} subscription expired/cancelled via RevenueCat ({event_type})")
         
     return {"status": "success", "detail": "Webhook event processed"}
 
@@ -2876,6 +3048,31 @@ async def start_backup_system_worker():
     except Exception as e:
         logging.getLogger(__name__).error(f"Initial startup backup failed: {e}")
     asyncio.create_task(periodic_backup_loop())
+
+async def periodic_subscription_check_loop():
+    """Periodically verifies Google Play / RevenueCat status and expires past-due subscriptions every hour."""
+    while True:
+        try:
+            await asyncio.sleep(3600)  # Check every 1 hour
+            now = datetime.utcnow()
+            expired_users = await db.users.find({
+                "subscription_tier": {"$ne": "free"},
+                "subscription_expiry": {"$ne": None, "$lte": now}
+            }).to_list(1000)
+
+            for u in expired_users:
+                try:
+                    await verify_external_subscription_status(u)
+                except Exception as user_err:
+                    logging.getLogger(__name__).error(f"Error checking subscription expiry for user {u.get('email')}: {user_err}")
+        except asyncio.CancelledError:
+            break
+        except Exception as e:
+            logging.getLogger(__name__).error(f"[PERIODIC SUBSCRIPTION CHECK EXCEPTION] {e}")
+
+@app.on_event("startup")
+async def start_subscription_checker_worker():
+    asyncio.create_task(periodic_subscription_check_loop())
 
 # Launch scheduled messages worker on startup
 @app.on_event("startup")

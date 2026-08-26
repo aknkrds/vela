@@ -3,12 +3,16 @@ import { isRunningInExpoGo } from 'expo';
 
 export const ADMOB_PUBLISHER_ID = 'ca-app-pub-7959716978040392';
 
+// Google Official Test Ad Unit IDs (for development/testing only)
+const GOOGLE_TEST_BANNER_ID = 'ca-app-pub-3940256099942544/6300978111';
+const GOOGLE_TEST_INTERSTITIAL_ID = 'ca-app-pub-3940256099942544/1033173712';
+
 // Banner Live Unit IDs
 export const ADMOB_BANNER_ID_ANDROID = process.env.EXPO_PUBLIC_ADMOB_BANNER_ANDROID || 'ca-app-pub-7959716978040392/6300978111';
 export const ADMOB_BANNER_ID_IOS = process.env.EXPO_PUBLIC_ADMOB_BANNER_IOS || 'ca-app-pub-7959716978040392/2934735716';
 
 // Interstitial Live Unit IDs
-export const ADMOB_INTERSTITIAL_ID_ANDROID = process.env.EXPO_PUBLIC_ADMOB_INTERSTITIAL_ANDROID || 'ca-app-pub-7959716978040392/6300978111';
+export const ADMOB_INTERSTITIAL_ID_ANDROID = process.env.EXPO_PUBLIC_ADMOB_INTERSTITIAL_ANDROID || 'ca-app-pub-7959716978040392/1033173712';
 export const ADMOB_INTERSTITIAL_ID_IOS = process.env.EXPO_PUBLIC_ADMOB_INTERSTITIAL_IOS || 'ca-app-pub-7959716978040392/2934735716';
 
 let InterstitialAd: any = null;
@@ -29,15 +33,17 @@ try {
 }
 
 export function getBannerAdUnitId(): string {
-  if (__DEV__ && TestIds) {
-    return TestIds.BANNER;
+  if (__DEV__) {
+    // Always use Google official test IDs in development mode
+    return TestIds?.BANNER || GOOGLE_TEST_BANNER_ID;
   }
   return Platform.OS === 'ios' ? ADMOB_BANNER_ID_IOS : ADMOB_BANNER_ID_ANDROID;
 }
 
 export function getInterstitialAdUnitId(): string {
-  if (__DEV__ && TestIds) {
-    return TestIds.INTERSTITIAL;
+  if (__DEV__) {
+    // Always use Google official test IDs in development mode
+    return TestIds?.INTERSTITIAL || GOOGLE_TEST_INTERSTITIAL_ID;
   }
   return Platform.OS === 'ios' ? ADMOB_INTERSTITIAL_ID_IOS : ADMOB_INTERSTITIAL_ID_ANDROID;
 }
