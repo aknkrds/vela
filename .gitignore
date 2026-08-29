@@ -72,3 +72,4 @@ backend/logs/
 backend/backups/
 backend/uploads/
 *.log
+revenuecat-service-account.json

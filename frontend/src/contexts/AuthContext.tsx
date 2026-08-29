@@ -99,10 +99,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   useEffect(() => {
-    if (user && user.user_id) {
-      configurePurchases(user.user_id);
-    }
-  }, [user]);
+    const syncSubscription = async () => {
+      if (user && user.user_id) {
+        await configurePurchases(user.user_id);
+        
+        // Check if user is supposedly on a paid tier but has no active entitlements in the store
+        if (user.subscription_tier !== 'free' && Platform.OS !== 'web') {
+          try {
+            const { getSubscriptionStatus } = require('@/src/services/revenuecat');
+            const hasActive = await getSubscriptionStatus();
+            
+            if (!hasActive) {
+              // Store says no active subscription (e.g. payment failed, expired) -> downgrade to free
+              if (token) {
+                await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/subscriptions/subscribe`, {
+                  plan_name: 'free'
+                }, {
+                  headers: { Authorization: `Bearer ${token}` }
+                });
+                await refreshUser();
+              }
+            }
+          } catch (error) {
+            console.error('Failed to sync subscription status:', error);
+          }
+        }
+      }
+    };
+    
+    syncSubscription();
+  }, [user?.user_id]);
 
   const checkStoredPin = async () => {
     const pin = await storage.secureGet('app_pin', null);

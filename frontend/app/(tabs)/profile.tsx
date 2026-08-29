@@ -608,10 +608,10 @@ export default function Profile() {
         plan.name === 'basic' ? 45 :
         plan.name === 'silver' ? 90 :
         plan.name === 'gold' ? 225 :
-        plan.name === 'diamond' ? 360 :
-        plan.name === 'blue_diamond' ? 675 :
-        plan.name === 'platinum' ? 1350 :
-        plan.name === 'galaxy' ? 4455 : Math.round(plan.price * 45)
+        plan.name === 'diamond' ? 337.5 :
+        plan.name === 'blue_diamond' ? 585 :
+        plan.name === 'platinum' ? 900 :
+        plan.name === 'galaxy' ? 3375 : Math.round(plan.price * 45)
       );
       return `₺${trPrice} / ${cycleText}`;
     } else {

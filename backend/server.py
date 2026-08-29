@@ -2789,52 +2789,52 @@ async def startup_db_indexes():
             {
                 "name": "diamond",
                 "display_name": "Diamond",
-                "price": 8,
+                "price": 7.5,
                 "currency": "USD",
                 "max_recipients": 2,
                 "max_messages": 2,
                 "allowed_types": ["text", "audio", "video"],
                 "features": ["2 recipients", "2 messages (text/audio/video)", "No ads", "Extra recipients available"],
-                "country_pricing": {"TR": {"price": 360, "currency": "TRY", "symbol": "₺"}},
+                "country_pricing": {"TR": {"price": 337.5, "currency": "TRY", "symbol": "₺"}},
                 "payment_methods": ["credit_card", "stripe"],
                 "billing_cycle": "lifetime"
             },
             {
                 "name": "blue_diamond",
                 "display_name": "Blue Diamond",
-                "price": 15,
+                "price": 13,
                 "currency": "USD",
                 "max_recipients": 5,
                 "max_messages": 5,
                 "allowed_types": ["text", "audio", "video"],
                 "features": ["5 recipients", "5 messages (text/audio/video)", "No ads", "Extra recipients available"],
-                "country_pricing": {"TR": {"price": 675, "currency": "TRY", "symbol": "₺"}},
+                "country_pricing": {"TR": {"price": 585, "currency": "TRY", "symbol": "₺"}},
                 "payment_methods": ["credit_card", "stripe"],
                 "billing_cycle": "lifetime"
             },
             {
                 "name": "platinum",
                 "display_name": "Platinum",
-                "price": 30,
+                "price": 20,
                 "currency": "USD",
                 "max_recipients": 25,
                 "max_messages": 25,
                 "allowed_types": ["text", "audio", "video"],
                 "features": ["25 recipients", "25 messages (any type)", "Multiple messages per recipient", "50% off extra recipients", "No ads"],
-                "country_pricing": {"TR": {"price": 1350, "currency": "TRY", "symbol": "₺"}},
+                "country_pricing": {"TR": {"price": 900, "currency": "TRY", "symbol": "₺"}},
                 "payment_methods": ["credit_card", "stripe"],
                 "billing_cycle": "lifetime"
             },
             {
                 "name": "galaxy",
                 "display_name": "Galaxy",
-                "price": 99,
+                "price": 75,
                 "currency": "USD",
                 "max_recipients": 999999,
                 "max_messages": 999999,
                 "allowed_types": ["text", "audio", "video"],
                 "features": ["Unlimited recipients", "Unlimited messages", "All message types", "No ads", "Priority support"],
-                "country_pricing": {"TR": {"price": 4455, "currency": "TRY", "symbol": "₺"}},
+                "country_pricing": {"TR": {"price": 3375, "currency": "TRY", "symbol": "₺"}},
                 "payment_methods": ["credit_card", "stripe"],
                 "billing_cycle": "lifetime"
             }
@@ -3078,6 +3078,12 @@ async def start_subscription_checker_worker():
 @app.on_event("startup")
 async def start_scheduled_messages_worker():
     asyncio.create_task(process_scheduled_messages_loop())
+
+@app.get("/app-ads.txt")
+async def get_app_ads_txt():
+    content = "google.com, pub-7959716978040392, DIRECT, f08c47fec0942fa0"
+    from fastapi.responses import HTMLResponse
+    return HTMLResponse(content=content, media_type="text/plain")
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
